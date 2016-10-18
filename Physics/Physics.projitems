@@ -10,5 +10,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)PhysicsManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)RigidBody2D.cs" />
   </ItemGroup>
 </Project>

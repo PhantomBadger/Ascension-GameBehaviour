@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Ascension
+namespace General
 {
 #if WINDOWS || LINUX
     /// <summary>

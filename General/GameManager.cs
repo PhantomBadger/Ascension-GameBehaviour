@@ -1,8 +1,10 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Physics;
 
-namespace Ascension
+namespace General
 {
     /// <summary>
     /// This is the main type for your game.
@@ -11,11 +13,23 @@ namespace Ascension
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
+        PhysicsManager physics;
+        Player player;
+
+        List<GameObject> gameObjects = new List<GameObject>();
 
         public GameManager()
         {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
+            physics = new PhysicsManager();
+
+            //Create the Player Component
+            player = new Player(new RigidBody2D(new Vector2(0, 0), new Vector2(1, 1), new Vector3(0, 0, 0), 1, false), 5.0f);
+
+            //Add to the collections
+            physics.RigidBodies.Add(player);
+            gameObjects.Add(player);
         }
 
         /// <summary>
