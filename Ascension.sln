@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.24720.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "AI", "AI\AI.shproj", "{6950BF00-5525-4D48-A34A-CD0D4EF8C65D}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Physics", "Physics\Physics.shproj", "{F4DADE25-E79F-450C-9B24-FA4DB430072B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "General", "General\General.csproj", "{E03D9879-E969-4940-8F00-7F14C68037BE}"
+EndProject
+Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		Physics\Physics.projitems*{f4dade25-e79f-450c-9b24-fa4db430072b}*SharedItemsImports = 13
+		AI\AI.projitems*{6950bf00-5525-4d48-a34a-cd0d4ef8c65d}*SharedItemsImports = 13
+		Physics\Physics.projitems*{e03d9879-e969-4940-8f00-7f14c68037be}*SharedItemsImports = 4
+		AI\AI.projitems*{e03d9879-e969-4940-8f00-7f14c68037be}*SharedItemsImports = 4
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E03D9879-E969-4940-8F00-7F14C68037BE}.Debug|x86.ActiveCfg = Debug|x86
+		{E03D9879-E969-4940-8F00-7F14C68037BE}.Debug|x86.Build.0 = Debug|x86
+		{E03D9879-E969-4940-8F00-7F14C68037BE}.Release|x86.ActiveCfg = Release|x86
+		{E03D9879-E969-4940-8F00-7F14C68037BE}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
