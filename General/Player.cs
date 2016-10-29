@@ -76,6 +76,8 @@ namespace General
             //Handle User Input
             ControllerHandler();
 
+            //Console.WriteLine($"Position {Transform.X}, {Transform.Y}");
+
             //Call RigidBody Update
             base.Update(gameTime);
         }
@@ -85,11 +87,11 @@ namespace General
         /// </summary>
         /// <param name="gameTime">Current Game Time</param>
         /// <param name="spriteBatch">Sprite Batch</param>
-        public override void Draw(GameTime gameTime, SpriteBatch spriteBatch)
+        public override void Draw(GameTime gameTime, SpriteBatch spriteBatch, GraphicsDevice graphicsDevice)
         {
             Rectangle drawRect = new Rectangle((int)Transform.X, (int)Transform.Y, playerTexture.Width, playerTexture.Height);
             spriteBatch.Draw(playerTexture, drawRect, Color.White);
-            base.Draw(gameTime, spriteBatch);
+            base.Draw(gameTime, spriteBatch, graphicsDevice);
         }
 
         /// <summary>

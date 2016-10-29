@@ -16,5 +16,9 @@ namespace Physics
         {
             RigidBodies = new List<RigidBody2D>();
         }
+
+        //TODO:
+        // Create Physics step
+        // Handle basic collisions 
     }
 }

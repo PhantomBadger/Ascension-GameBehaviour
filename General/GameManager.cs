@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Physics;
+using System;
 
 namespace General
 {
@@ -11,6 +12,9 @@ namespace General
     /// </summary>
     public class GameManager : Game
     {
+        public static bool DebugMode = false;
+        public static Vector2 Gravity = new Vector2(0, 9.8f);
+
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
         PhysicsManager physics;
@@ -24,17 +28,9 @@ namespace General
             Content.RootDirectory = "Content";
             physics = new PhysicsManager();
 
-            //Create the Player Component
-            player = new Player(new RigidBody2D(new Vector2(0, 0),
-                                                new Vector2(1, 1),
-                                                new Vector3(0, 0, 0),
-                                                1,
-                                                false),
-                                15.0f);
-
-            //Add to the collections
-            physics.RigidBodies.Add(player);
-            gameObjects.Add(player);
+            //Run at a fixed step at 60 FPS
+            IsFixedTimeStep = true;
+            TargetElapsedTime = TimeSpan.FromMilliseconds((1.0f / 60.0f) * 1000);
         }
 
         /// <summary>
@@ -45,7 +41,30 @@ namespace General
         /// </summary>
         protected override void Initialize()
         {
-            for(int i = 0; i < gameObjects.Count; i++)
+            //Create the Player Component
+            player = new Player(new RigidBody2D(new Vector2(0, 0),
+                                                new Vector2(1, 1),
+                                                new Vector3(0, 0, 0),
+                                                1,
+                                                false),
+                                50.0f);
+            player.BoxCollider = new Vector2(10, 10);
+            //Add to the collections
+            physics.RigidBodies.Add(player);
+            gameObjects.Add(player);
+
+            //Create the Ground Object
+            Platform ground = new Platform();
+            ground.Mass = 200;
+            ground.IsStatic = true;
+            ground.Transform = new Vector2(0, 300);
+            ground.Size = new Vector2(500, 20);
+            ground.BoxCollider = new Vector2(500, 20);
+
+            gameObjects.Add(ground);
+            physics.RigidBodies.Add(ground);
+
+            for (int i = 0; i < gameObjects.Count; i++)
             {
                 gameObjects[i].Initialize();
             }
@@ -88,12 +107,24 @@ namespace General
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
+
             //Game Logic
+            ControllerHandler();
+
             for (int i = 0; i < gameObjects.Count; i++)
             {
                 gameObjects[i].Update(gameTime);
             }
             base.Update(gameTime);
+        }
+
+        private void ControllerHandler()
+        {
+            //Enable Debug mode
+            if (Keyboard.GetState().IsKeyDown(Keys.P))
+            {
+                DebugMode = !DebugMode;
+            }
         }
 
         /// <summary>
@@ -108,7 +139,7 @@ namespace General
             spriteBatch.Begin();
             for (int i = 0; i < gameObjects.Count; i++)
             {
-                gameObjects[i].Draw(gameTime, spriteBatch);
+                gameObjects[i].Draw(gameTime, spriteBatch, GraphicsDevice);
             }
             spriteBatch.End();
 

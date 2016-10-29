@@ -13,12 +13,16 @@ namespace Physics
         public Vector2 Velocity { get; set; }
         public Vector2 Acceleration { get; set; }
         public Vector2 Force { get; set; }
+        public Vector2 BoxCollider { get; set; }
         public int Mass { get; set; }
         public bool IsStatic { get; set; }
+        public bool IsIgnoringGravity { get; set; }
 
         private SpriteFont debugFont;
 
-        const float Drag = 0.01f;
+        const float Drag = 0.001f;
+        const float MinPosChange = 0.1f;
+        const float VelocityFloor = 0.005f;
 
         /// <summary>
         /// Constructor for the RigidBody2D Class with full information
@@ -34,6 +38,7 @@ namespace Physics
         {
             Mass = newMass;
             IsStatic = isStatic;
+            IsIgnoringGravity = false;
         }
 
         /// <summary>
@@ -45,6 +50,7 @@ namespace Physics
         {
             Mass = 1;
             IsStatic = false;
+            IsIgnoringGravity = false;
         }
 
         /// <summary>
@@ -81,32 +87,71 @@ namespace Physics
         public override void Update(GameTime gameTime)
         {
             //Calculate acceleration using F/m
-            Acceleration = Force * (1 / Mass);
+            if (!IsIgnoringGravity)
+            {
+                //If we're not ignoring gravity, apply it as a constant force
+                Acceleration = (Force + GameManager.Gravity) * (1 / Mass);
+            }
+            else
+            {
+                //If we are, ignore it
+                Acceleration = Force * (1 / Mass);
+            }
 
-            //Calculate Velocity using V = at
-            Velocity += (Acceleration * (float)gameTime.ElapsedGameTime.TotalSeconds);
+            if (!IsStatic)
+            {
+                //Calculate Velocity using V = at
+                Velocity += (Acceleration * (float)gameTime.ElapsedGameTime.TotalSeconds);
 
-            //Add Air Resistance Drag to Velocity so there's a "Terminal Velocity"
-            Velocity *= (1 - Drag);
+                //Add Air Resistance Drag to Velocity so there's a "Terminal Velocity"
+                Velocity *= (1 - Drag);
 
-            //Use Euler Integration to update Position
-            Transform += (Velocity * (float)gameTime.ElapsedGameTime.TotalSeconds);
+                //Use Euler Integration to update Position
+                //If the velocity is too low do not
+                if (Math.Abs(Velocity.X) > MinPosChange || Math.Abs(Velocity.Y) > MinPosChange)
+                {
+                    Transform += (Velocity * (float)gameTime.ElapsedGameTime.TotalSeconds);
+                }
+            }
 
             //Reset Force so it's not continually applied
             Force = new Vector2(0, 0);
 
-            //throw new NotImplementedException();
+            //Floor Velocity to zero to prevent an incredibly small number - Prevents long decimal numbers when debugging
+            Velocity = (Math.Abs(Velocity.X) < VelocityFloor ? new Vector2(0, Velocity.Y) : Velocity);
+            Velocity = (Math.Abs(Velocity.Y) < VelocityFloor ? new Vector2(Velocity.X, 0) : Velocity);
         }
 
         /// <summary>
         /// Draw any RigidBody Debug Info (Force Arrows, etc)
         /// </summary>
         /// <param name="gameTime">Current Game Time</param>
-        public override void Draw(GameTime gameTime, SpriteBatch spriteBatch)
+        public override void Draw(GameTime gameTime, SpriteBatch spriteBatch, GraphicsDevice graphicsDevice)
         {
-            //Do Nothing
-            spriteBatch.DrawString(debugFont, $"Acceleration: ({Acceleration.X}, {Acceleration.Y})", new Vector2(0, 0), Color.White);
-            spriteBatch.DrawString(debugFont, $"Velocity: ({Velocity.X}, {Velocity.Y})", new Vector2(0, 20), Color.White);
+            if (GameManager.DebugMode)
+            {
+                //Draw Debug Lines
+                Vector2 velocityLine = (Transform + Velocity) - Transform;
+                float lineAngle = (float)Math.Atan2(velocityLine.Y, velocityLine.X);
+
+                Texture2D debugTex = new Texture2D(graphicsDevice, 1, 1);
+                debugTex.SetData(new Color[] { Color.DarkGray });
+
+                spriteBatch.Draw(debugTex,
+                    new Rectangle((int)Transform.X, (int)Transform.Y, (int)velocityLine.Length(), 3),
+                    null,
+                    Color.White,
+                    lineAngle,
+                    new Vector2(0, 0),
+                    SpriteEffects.None,
+                    0);
+
+
+                spriteBatch.DrawString(debugFont, $"({Velocity.X}, {Velocity.Y})", new Vector2(Transform.X, Transform.Y - 15), Color.White);
+                //spriteBatch.DrawString(debugFont, $"Acceleration: ({Acceleration.X}, {Acceleration.Y})", new Vector2(0, 0), Color.White);
+                //spriteBatch.DrawString(debugFont, $"Velocity: ({Velocity.X}, {Velocity.Y})", new Vector2(0, 20), Color.White);
+            }
         }
+
     }
 }

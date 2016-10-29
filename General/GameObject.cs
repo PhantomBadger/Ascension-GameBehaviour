@@ -53,7 +53,7 @@ namespace General
         /// Draw Method Stub for all GameObjects
         /// </summary>
         /// <param name="gameTime">Current Game Time</param>
-        public abstract void Draw(GameTime gameTime, SpriteBatch spriteBatch);
+        public abstract void Draw(GameTime gameTime, SpriteBatch spriteBatch, GraphicsDevice graphicsDevice);
 
         /// <summary>
         /// Load Content Stub for all GameObjects
