@@ -25,7 +25,12 @@ namespace General
             physics = new PhysicsManager();
 
             //Create the Player Component
-            player = new Player(new RigidBody2D(new Vector2(0, 0), new Vector2(1, 1), new Vector3(0, 0, 0), 1, false), 5.0f);
+            player = new Player(new RigidBody2D(new Vector2(0, 0),
+                                                new Vector2(1, 1),
+                                                new Vector3(0, 0, 0),
+                                                1,
+                                                false),
+                                15.0f);
 
             //Add to the collections
             physics.RigidBodies.Add(player);
@@ -40,8 +45,10 @@ namespace General
         /// </summary>
         protected override void Initialize()
         {
-            // TODO: Add your initialization logic here
-
+            for(int i = 0; i < gameObjects.Count; i++)
+            {
+                gameObjects[i].Initialize();
+            }
             base.Initialize();
         }
 
@@ -53,8 +60,10 @@ namespace General
         {
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
-
-            // TODO: use this.Content to load your game content here
+            for (int i = 0; i < gameObjects.Count; i++)
+            {
+                gameObjects[i].LoadContent(Content);
+            }
         }
 
         /// <summary>
@@ -63,7 +72,10 @@ namespace General
         /// </summary>
         protected override void UnloadContent()
         {
-            // TODO: Unload any non ContentManager content here
+            for (int i = 0; i < gameObjects.Count; i++)
+            {
+                gameObjects[i].UnloadContent();
+            }
         }
 
         /// <summary>
@@ -76,8 +88,11 @@ namespace General
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-            // TODO: Add your update logic here
-
+            //Game Logic
+            for (int i = 0; i < gameObjects.Count; i++)
+            {
+                gameObjects[i].Update(gameTime);
+            }
             base.Update(gameTime);
         }
 
@@ -89,7 +104,13 @@ namespace General
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            // TODO: Add your drawing code here
+            //Draw Code
+            spriteBatch.Begin();
+            for (int i = 0; i < gameObjects.Count; i++)
+            {
+                gameObjects[i].Draw(gameTime, spriteBatch);
+            }
+            spriteBatch.End();
 
             base.Draw(gameTime);
         }

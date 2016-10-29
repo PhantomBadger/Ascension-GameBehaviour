@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace General
 {
@@ -37,9 +39,31 @@ namespace General
         }
 
         /// <summary>
+        /// Initialize Method Stub for all GameObjects
+        /// </summary>
+        public abstract void Initialize();
+
+        /// <summary>
         /// Update Method Stub for all GameObjects
         /// </summary>
         /// <param name="gameTime">Current Game Time</param>
-        protected abstract void Update(GameTime gameTime);
+        public abstract void Update(GameTime gameTime);
+
+        /// <summary>
+        /// Draw Method Stub for all GameObjects
+        /// </summary>
+        /// <param name="gameTime">Current Game Time</param>
+        public abstract void Draw(GameTime gameTime, SpriteBatch spriteBatch);
+
+        /// <summary>
+        /// Load Content Stub for all GameObjects
+        /// </summary>
+        /// <param name="content">Content Manager</param>
+        public abstract void LoadContent(ContentManager content);
+
+        /// <summary>
+        /// Unload Content Stub for all GameObjects
+        /// </summary>
+        public abstract void UnloadContent();
     }
 }
