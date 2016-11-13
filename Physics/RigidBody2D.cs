@@ -26,6 +26,7 @@ namespace Physics
         public FrictionCoefficients Friction { get; set; }
         public Vector2 ActiveStatic { get; set; }
         public Vector2 ActiveDynamic { get; set; }
+        public int frictionCount = 0;
 
         private SpriteFont debugFont;
 

@@ -31,11 +31,16 @@ namespace Physics
         {
             //Create a list of collision pairs
             List<CollisionPair> collisionsToResolve = new List<CollisionPair>();
+            List<RigidBody2D> frictionObjects = new List<RigidBody2D>();
 
             //Detect collisions to populate our pairs
             for (int i = 0; i < RigidBodies.Count; i++)
             {
+                //Reset the friction counter
+                RigidBodies[i].frictionCount = 0;
                 bool hasCol = false;
+
+                //Compare with all others
                 for (int j = 0; j < RigidBodies.Count; j++)
                 {
                     //Prevent it colliding with itself
@@ -67,6 +72,23 @@ namespace Physics
             for (int i = 0; i < collisionsToResolve.Count; i++)
             {
                 ResolveAABBAABB(collisionsToResolve[i]);
+
+                //Add it to our friction object collection
+                if (!frictionObjects.Contains(collisionsToResolve[i].objectA))
+                {
+                    frictionObjects.Add(collisionsToResolve[i].objectA);
+                }
+                if (!frictionObjects.Contains(collisionsToResolve[i].objectB))
+                {
+                    frictionObjects.Add(collisionsToResolve[i].objectB);
+                }
+            }
+
+            //Resolve Friction
+            for (int i = 0; i < frictionObjects.Count; i++)
+            {
+                frictionObjects[i].ActiveStatic /= frictionObjects[i].frictionCount;
+                frictionObjects[i].ActiveDynamic /= frictionObjects[i].frictionCount;
             }
         }
 
@@ -160,14 +182,18 @@ namespace Physics
             }
 
             //Assign the current friction to both objects
+            //We add together all the active friction components and average them at the end
+            //So an object should have it's movement decremented by the friction applied by all it's collided objects
             int frictionScale = 1;
             //Object A
-            colPair.objectA.ActiveDynamic = (-(colPair.objectB.Friction.DynamicCoefficient / normalMagnitude.Length()) * (colPair.objectA.Velocity / colPair.objectA.Velocity.Length())) * frictionScale;
-            colPair.objectA.ActiveStatic = (-(colPair.objectB.Friction.StaticCoefficient / normalMagnitude.Length()) * (new Vector2(colPair.contactNormal.Y, -colPair.contactNormal.X))) * frictionScale;
+            colPair.objectA.frictionCount++;
+            colPair.objectA.ActiveDynamic += (-(colPair.objectB.Friction.DynamicCoefficient / normalMagnitude.Length()) * (colPair.objectA.Velocity / colPair.objectA.Velocity.Length())) * frictionScale;
+            colPair.objectA.ActiveStatic += (-(colPair.objectB.Friction.StaticCoefficient / normalMagnitude.Length()) * (new Vector2(colPair.contactNormal.Y, -colPair.contactNormal.X))) * frictionScale;
 
             //Object B
-            colPair.objectB.ActiveDynamic = (-(colPair.objectA.Friction.DynamicCoefficient / normalMagnitude.Length()) * (colPair.objectB.Velocity / colPair.objectB.Velocity.Length())) * frictionScale;
-            colPair.objectB.ActiveStatic = (-(colPair.objectA.Friction.StaticCoefficient / normalMagnitude.Length()) * (new Vector2(colPair.contactNormal.Y, -colPair.contactNormal.X))) * frictionScale;
+            colPair.objectB.frictionCount++;
+            colPair.objectB.ActiveDynamic += (-(colPair.objectA.Friction.DynamicCoefficient / normalMagnitude.Length()) * (colPair.objectB.Velocity / colPair.objectB.Velocity.Length())) * frictionScale;
+            colPair.objectB.ActiveStatic += (-(colPair.objectA.Friction.StaticCoefficient / normalMagnitude.Length()) * (new Vector2(colPair.contactNormal.Y, -colPair.contactNormal.X))) * frictionScale;
 
         }
 
