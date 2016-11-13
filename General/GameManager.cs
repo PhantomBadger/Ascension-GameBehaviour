@@ -13,7 +13,7 @@ namespace General
     public class GameManager : Game
     {
         public static bool DebugMode = false;
-        public static Vector2 Gravity = new Vector2(0, 9.8f);
+        public static Vector2 Gravity = new Vector2(0, 98.0f);
 
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
@@ -46,9 +46,11 @@ namespace General
                                                 new Vector2(1, 1),
                                                 new Vector3(0, 0, 0),
                                                 1,
-                                                false),
-                                50.0f);
-            player.BoxCollider = new Vector2(10, 10);
+                                                false,
+                                                new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.0f, DynamicCoefficient = 0.0f }),
+                                50.0f,
+                                196.0f);
+            player.BoxCollider = new Vector2(32, 32);
             //Add to the collections
             physics.RigidBodies.Add(player);
             gameObjects.Add(player);
@@ -57,13 +59,27 @@ namespace General
             Platform ground = new Platform();
             ground.Mass = 200;
             ground.IsStatic = true;
-            ground.Transform = new Vector2(0, 300);
+            ground.Position = new Vector2(0, 300);
             ground.Size = new Vector2(500, 20);
             ground.BoxCollider = new Vector2(500, 20);
+            ground.Friction = new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 100.5f, DynamicCoefficient = 1.2f };
 
             gameObjects.Add(ground);
             physics.RigidBodies.Add(ground);
 
+            //Create an additional platform
+            Platform platform = new Platform();
+            platform.Mass = 200;
+            platform.IsStatic = true;
+            platform.Position = new Vector2(100, 200);
+            platform.Size = new Vector2(500, 20);
+            platform.BoxCollider = new Vector2(500, 20);
+            platform.Friction = new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.5f, DynamicCoefficient = 0.2f };
+
+            gameObjects.Add(platform);
+            physics.RigidBodies.Add(platform);
+
+            //Initialise all our game objects
             for (int i = 0; i < gameObjects.Count; i++)
             {
                 gameObjects[i].Initialize();
@@ -115,6 +131,10 @@ namespace General
             {
                 gameObjects[i].Update(gameTime);
             }
+
+            //Call Physics
+            physics.Step();
+
             base.Update(gameTime);
         }
 

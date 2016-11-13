@@ -11,7 +11,7 @@ namespace General
 {
     abstract class GameObject
     {
-        public Vector2 Transform { get; set; }
+        public Vector2 Position { get; set; }
         public Vector2 Scale { get; set; }
         public Vector3 Rotation { get; set; }
 
@@ -23,7 +23,7 @@ namespace General
         /// <param name="newRotation"></param>
         public GameObject(Vector2 newTransform, Vector2 newScale, Vector3 newRotation)
         {
-            Transform = newTransform;
+            Position = newTransform;
             Scale = newScale;
             Rotation = newRotation;
         }
@@ -33,7 +33,7 @@ namespace General
         /// </summary>
         public GameObject()
         {
-            Transform = new Vector2();
+            Position = new Vector2();
             Scale = new Vector2();
             Rotation = new Vector3();
         }

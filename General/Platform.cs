@@ -16,7 +16,8 @@ namespace General
 
         public Platform()
         {
-            new Rectangle(0, 0, 0, 0);
+            Size = new Vector2();
+            Friction = new FrictionCoefficients() { StaticCoefficient = 0.0f, DynamicCoefficient = 0.0f };
         }
 
         public override void LoadContent(ContentManager content)
@@ -46,7 +47,7 @@ namespace General
             Texture2D tempTex = new Texture2D(graphicsDevice, 1, 1);
             tempTex.SetData(new Color[] { Color.DarkGray });
 
-            spriteBatch.Draw(tempTex, new Rectangle(Transform.ToPoint(), Size.ToPoint()), Color.DarkGray);
+            spriteBatch.Draw(tempTex, new Rectangle(Position.ToPoint(), Size.ToPoint()), Color.DarkGray);
 
             base.Draw(gameTime, spriteBatch, graphicsDevice);
         }

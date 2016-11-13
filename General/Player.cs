@@ -16,6 +16,7 @@ namespace General
     class Player : RigidBody2D
     {
         public float PlayerSpeed { get; set; }
+        public float JumpSpeed { get; set; }
 
         private Texture2D playerTexture;
 
@@ -24,10 +25,11 @@ namespace General
         /// </summary>
         /// <param name="newRigidBody">RigidBody component of the player</param>
         /// <param name="newSpeed">Player's default movement speed</param>
-        public Player(RigidBody2D newRigidBody, float newSpeed) : 
-            base(newRigidBody.Transform, newRigidBody.Scale, newRigidBody.Rotation, newRigidBody.Mass, newRigidBody.IsStatic)
+        public Player(RigidBody2D newRigidBody, float newSpeed, float newJumpSpeed) : 
+            base(newRigidBody.Position, newRigidBody.Scale, newRigidBody.Rotation, newRigidBody.Mass, newRigidBody.IsStatic, newRigidBody.Friction)
         {
             PlayerSpeed = newSpeed;
+            JumpSpeed = newJumpSpeed;
         }
 
         /// <summary>
@@ -80,6 +82,8 @@ namespace General
 
             //Call RigidBody Update
             base.Update(gameTime);
+
+            Console.WriteLine($"Player Active Friction Dynamic ({ActiveDynamic.X}, {ActiveDynamic.Y}) Static ({ActiveStatic.X}, {ActiveStatic.Y})");
         }
 
         /// <summary>
@@ -89,7 +93,7 @@ namespace General
         /// <param name="spriteBatch">Sprite Batch</param>
         public override void Draw(GameTime gameTime, SpriteBatch spriteBatch, GraphicsDevice graphicsDevice)
         {
-            Rectangle drawRect = new Rectangle((int)Transform.X, (int)Transform.Y, playerTexture.Width, playerTexture.Height);
+            Rectangle drawRect = new Rectangle((int)Position.X, (int)Position.Y, playerTexture.Width, playerTexture.Height);
             spriteBatch.Draw(playerTexture, drawRect, Color.White);
             base.Draw(gameTime, spriteBatch, graphicsDevice);
         }
@@ -111,14 +115,16 @@ namespace General
             }
             if (Keyboard.GetState().IsKeyDown(Keys.S))
             {
-                //Move Down?
+                //Move Down
                 Force = new Vector2(Force.X, PlayerSpeed);
             }
             if (Keyboard.GetState().IsKeyDown(Keys.W))
             {
-                //Move Up?
-                Force = new Vector2(Force.X, -PlayerSpeed);
+                //Move Up
+                Force = new Vector2(Force.X, -JumpSpeed);
             }
         }
+
+
     }
 }
