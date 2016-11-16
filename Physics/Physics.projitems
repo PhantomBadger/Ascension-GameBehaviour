@@ -9,6 +9,7 @@
     <Import_RootNamespace>Physics</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)CollisionPair.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)PhysicsManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RigidBody2D.cs" />
   </ItemGroup>

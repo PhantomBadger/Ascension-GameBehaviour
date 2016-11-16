@@ -20,19 +20,19 @@ namespace Physics
         public Vector2 Acceleration { get; set; }
         public Vector2 Force { get; set; }
         public Vector2 BoxCollider { get; set; }
-        public int Mass { get; set; }
+        public float Mass { get; set; }
         public bool IsStatic { get; set; }
         public bool IsIgnoringGravity { get; set; }
         public FrictionCoefficients Friction { get; set; }
         public Vector2 ActiveStatic { get; set; }
         public Vector2 ActiveDynamic { get; set; }
-        public int frictionCount = 0;
+        public float Bounciness { get; set; }
 
         private SpriteFont debugFont;
 
         const float AirResistance = 0.001f;
         const float MinPosChange = 0.1f;
-        const float VelocityFloor = 0.005f;
+        const float VelocityFloor = 0.05f;
 
         /// <summary>
         /// Constructor for the RigidBody2D Class with full information
@@ -43,13 +43,14 @@ namespace Physics
         /// <param name="newRotation">The Rotation of the Object</param>
         /// <param name="newMass">The Mass of the Object</param>
         /// <param name="isStatic">Whether the object is movable</param>
-        public RigidBody2D(Vector2 newTransform, Vector2 newScale, Vector3 newRotation, int newMass, bool isStatic, FrictionCoefficients newFriction) : 
+        public RigidBody2D(Vector2 newTransform, Vector2 newScale, Vector3 newRotation, float newMass, bool isStatic, FrictionCoefficients newFriction, float newBounciness) : 
             base(newTransform, newScale, newRotation)
         {
             Mass = newMass;
             IsStatic = isStatic;
             IsIgnoringGravity = false;
             Friction = newFriction;
+            Bounciness = newBounciness;
         }
 
         /// <summary>
@@ -63,6 +64,7 @@ namespace Physics
             IsStatic = false;
             IsIgnoringGravity = false;
             Friction = new FrictionCoefficients() { StaticCoefficient = 0.0f, DynamicCoefficient = 0.0f };
+            Bounciness = 0.0f;
         }
 
         /// <summary>
@@ -98,6 +100,23 @@ namespace Physics
         /// <param name="gameTime"></param>
         public override void Update(GameTime gameTime)
         {
+            //Apply the Friction to the current Force
+            if (Velocity.X == 0)
+            {
+                //Static Friction
+                Force += ActiveStatic;
+            }
+            else
+            {
+                //Dynamic Friction
+                Force += ActiveDynamic;
+            }
+
+            if (Tag == "Player")
+            {
+                Console.WriteLine($"Player Velocity {Velocity.X}, {Velocity.Y}");
+            }
+
             //Calculate acceleration using F/m
             if (!IsIgnoringGravity)
             {
@@ -118,16 +137,6 @@ namespace Physics
                 //Add Air Resistance Drag to Velocity so there's a "Terminal Velocity"
                 Velocity *= (1 - AirResistance);
 
-                //Apply Friction
-                if (Velocity.X == 0)
-                {
-                    Velocity = new Vector2(Math.Max(Velocity.X + ActiveStatic.X, 0), Velocity.Y + ActiveStatic.Y);
-                }
-                else
-                {
-                    Velocity = new Vector2(Math.Max(Velocity.X + ActiveDynamic.X, 0), Velocity.Y + ActiveDynamic.Y);
-                }
-
                 //Use Euler Integration to update Position
                 //If the velocity is too low do not
                 if (Math.Abs(Velocity.X) > MinPosChange || Math.Abs(Velocity.Y) > MinPosChange)
@@ -138,6 +147,10 @@ namespace Physics
 
             //Reset Force so it's not continually applied
             Force = new Vector2(0, 0);
+
+            //Reset Friction
+            ActiveStatic = new Vector2(0);
+            ActiveDynamic = new Vector2(0);
 
             //Floor Velocity to zero to prevent an incredibly small number - Prevents long decimal numbers when debugging
             Velocity = (Math.Abs(Velocity.X) < VelocityFloor ? new Vector2(0, Velocity.Y) : Velocity);
@@ -167,6 +180,17 @@ namespace Physics
                     new Vector2(0, 0),
                     SpriteEffects.None,
                     0);
+                    
+                float frictionAngle = (float)Math.Atan2(ActiveDynamic.Y, ActiveDynamic.X);
+
+                spriteBatch.Draw(velocityTex,
+                    new Rectangle((int)Position.X, (int)Position.Y, (int)ActiveDynamic.Length(), 3),
+                    null,
+                    Color.Red,
+                    frictionAngle,
+                    new Vector2(0,0),
+                    SpriteEffects.None,
+                    0);
 
 
                 spriteBatch.DrawString(debugFont, $"({Velocity.X}, {Velocity.Y})", new Vector2(Position.X, Position.Y - 15), Color.White);
@@ -189,6 +213,15 @@ namespace Physics
                 //Right Line
                 spriteBatch.Draw(colTex, new Rectangle((int)(Position.X + BoxCollider.X), (int)Position.Y, 3, (int)BoxCollider.Y + 3), Color.White);
             }
+        }
+
+        /// <summary>
+        /// Handle specific actions relative to collisions
+        /// </summary>
+        /// <param name="col"></param>
+        public virtual void OnCollision(CollisionPair col)
+        {
+            //Do Nothing
         }
 
     }

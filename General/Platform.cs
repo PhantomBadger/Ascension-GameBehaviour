@@ -18,6 +18,7 @@ namespace General
         {
             Size = new Vector2();
             Friction = new FrictionCoefficients() { StaticCoefficient = 0.0f, DynamicCoefficient = 0.0f };
+            Tag = "Ground";
         }
 
         public override void LoadContent(ContentManager content)

@@ -45,12 +45,14 @@ namespace General
             player = new Player(new RigidBody2D(new Vector2(0, 0),
                                                 new Vector2(1, 1),
                                                 new Vector3(0, 0, 0),
-                                                1,
+                                                0.5f,
                                                 false,
-                                                new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.0f, DynamicCoefficient = 0.0f }),
+                                                new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.0f, DynamicCoefficient = 0.0f },
+                                                0.8f),
                                 50.0f,
-                                196.0f);
+                                6500.0f);
             player.BoxCollider = new Vector2(32, 32);
+            player.Tag = "Player";
             //Add to the collections
             physics.RigidBodies.Add(player);
             gameObjects.Add(player);
@@ -62,7 +64,8 @@ namespace General
             ground.Position = new Vector2(0, 300);
             ground.Size = new Vector2(500, 20);
             ground.BoxCollider = new Vector2(500, 20);
-            ground.Friction = new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 100.5f, DynamicCoefficient = 1.2f };
+            ground.Friction = new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.9f, DynamicCoefficient = 0.9f };
+            ground.Bounciness = 0.0f;
 
             gameObjects.Add(ground);
             physics.RigidBodies.Add(ground);
@@ -75,6 +78,7 @@ namespace General
             platform.Size = new Vector2(500, 20);
             platform.BoxCollider = new Vector2(500, 20);
             platform.Friction = new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.5f, DynamicCoefficient = 0.2f };
+            platform.Bounciness = 0.8f;
 
             gameObjects.Add(platform);
             physics.RigidBodies.Add(platform);

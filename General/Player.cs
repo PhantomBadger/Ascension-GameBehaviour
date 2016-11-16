@@ -19,6 +19,7 @@ namespace General
         public float JumpSpeed { get; set; }
 
         private Texture2D playerTexture;
+        private bool onGround = false;
 
         /// <summary>
         /// Constructor for Player Class with full info
@@ -26,10 +27,11 @@ namespace General
         /// <param name="newRigidBody">RigidBody component of the player</param>
         /// <param name="newSpeed">Player's default movement speed</param>
         public Player(RigidBody2D newRigidBody, float newSpeed, float newJumpSpeed) : 
-            base(newRigidBody.Position, newRigidBody.Scale, newRigidBody.Rotation, newRigidBody.Mass, newRigidBody.IsStatic, newRigidBody.Friction)
+            base(newRigidBody.Position, newRigidBody.Scale, newRigidBody.Rotation, newRigidBody.Mass, newRigidBody.IsStatic, newRigidBody.Friction, newRigidBody.Bounciness)
         {
             PlayerSpeed = newSpeed;
             JumpSpeed = newJumpSpeed;
+            Tag = "Player";
         }
 
         /// <summary>
@@ -40,6 +42,7 @@ namespace General
             base ()
         {
             PlayerSpeed = newSpeed;
+            Tag = "Player";
         }
 
         /// <summary>
@@ -77,13 +80,14 @@ namespace General
         {
             //Handle User Input
             ControllerHandler();
+            onGround = false;
 
             //Console.WriteLine($"Position {Transform.X}, {Transform.Y}");
 
             //Call RigidBody Update
             base.Update(gameTime);
 
-            Console.WriteLine($"Player Active Friction Dynamic ({ActiveDynamic.X}, {ActiveDynamic.Y}) Static ({ActiveStatic.X}, {ActiveStatic.Y})");
+            //Console.WriteLine($"Player Active Friction Dynamic ({ActiveDynamic.X}, {ActiveDynamic.Y}) Static ({ActiveStatic.X}, {ActiveStatic.Y})");
         }
 
         /// <summary>
@@ -113,6 +117,7 @@ namespace General
                 //Move Left
                 Force = new Vector2(-PlayerSpeed, Force.Y);
             }
+            /*
             if (Keyboard.GetState().IsKeyDown(Keys.S))
             {
                 //Move Down
@@ -123,8 +128,25 @@ namespace General
                 //Move Up
                 Force = new Vector2(Force.X, -JumpSpeed);
             }
+            */
+            if (Keyboard.GetState().IsKeyDown(Keys.Space) && onGround)
+            {
+                Force = new Vector2(Force.X, -JumpSpeed);
+                onGround = false;
+            }
         }
 
+        public override void OnCollision(CollisionPair col)
+        {
+            RigidBody2D collidedObject = col.ObjectA == (RigidBody2D)this ? col.ObjectB : col.ObjectA;
+            if (collidedObject.Tag == "Ground")
+            {
+                //If we're with the ground, set the variable onGround to true
+                //Console.WriteLine("On the ground");
+                onGround = true;
+            }
+            base.OnCollision(col);
+        }
 
     }
 }
