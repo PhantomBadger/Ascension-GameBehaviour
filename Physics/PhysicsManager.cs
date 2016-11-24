@@ -76,20 +76,22 @@ namespace Physics
                 Vector2 objBMid = objectB.Position + (objectB.BoxCollider / 2);
 
                 //Calculate the difference between the objects on the X and Y
-                //Their point of intersection
-                //
                 float xColDistance, yColDistance;
                 xColDistance = yColDistance = 0.0f;
                 float dx = objBMid.X - objAMid.X;
                 float dy = objBMid.Y - objAMid.Y;
-                float pointX = (objectB.BoxCollider.X / 2) + (objectA.BoxCollider.X / 2) - Math.Abs(dx);
-                float pointY = (objectB.BoxCollider.Y / 2) + (objectA.BoxCollider.Y / 2) - Math.Abs(dy);
 
-                xColDistance = pointX * (Math.Sign(dx));
-                yColDistance = pointY * (Math.Sign(dy));
+                //Get the depth of intsersection component
+                float depthX = (objectB.BoxCollider.X / 2) + (objectA.BoxCollider.X / 2) - Math.Abs(dx);
+                float depthY = (objectB.BoxCollider.Y / 2) + (objectA.BoxCollider.Y / 2) - Math.Abs(dy);
+
+                //apply the displacement sign in order to give 'direction' (neg x/y for left/up, etc)
+                xColDistance = depthX * (Math.Sign(dx));
+                yColDistance = depthY * (Math.Sign(dy));
 
                 //Depending on which distance is shorter, add different values
-                if (pointX < pointY)
+                //Ignore direction for these comparisons
+                if (Math.Abs(xColDistance) < Math.Abs(yColDistance))
                 {
                     colPair.ContactNormal = new Vector2(Math.Sign(dx), 0);
                     colPair.ContactPoint = new Vector2(objectA.Position.X + (objectA.BoxCollider.X * Math.Sign(dx)), objectB.Position.Y);
@@ -117,7 +119,7 @@ namespace Physics
             Vector2 normalMagnitude = colPair.ContactNormal;
             colPair.ContactNormal.Normalize();
 
-            //Console.WriteLine($"({colPair.contactNormal.X}, {colPair.contactNormal.Y})");
+            Console.WriteLine($"Col {colPair.ObjectA.Tag} & {colPair.ObjectB.Tag} Pen Depth: {colPair.ContactPenetration.X}, {colPair.ContactPenetration.Y}");
 
             //Get the velocity along the normal
             float velocityAlongContactNormal = Vector2.Dot(relativeVelocity, colPair.ContactNormal);
@@ -135,7 +137,8 @@ namespace Physics
             {
                 //Create a new velocity
                 Vector2 objectANewVelocity = colPair.ObjectA.Velocity + (colPair.ContactNormal * (impulse / colPair.ObjectA.Mass));
-                colPair.ObjectA.Position -= colPair.ContactPenetration.X < colPair.ContactPenetration.Y ? new Vector2(colPair.ContactPenetration.X, 0) : new Vector2(0, colPair.ContactPenetration.Y);
+                //Displace by the smallest pen depth, dont compare with signs
+                colPair.ObjectA.Position -= Math.Abs(colPair.ContactPenetration.X) < Math.Abs(colPair.ContactPenetration.Y) ? new Vector2(colPair.ContactPenetration.X, 0) : new Vector2(0, colPair.ContactPenetration.Y);
                 colPair.ObjectA.Velocity = objectANewVelocity;
             }
 
@@ -143,7 +146,7 @@ namespace Physics
             {
                 //Create a new velocity
                 Vector2 objectBNewVelocity = colPair.ObjectB.Velocity - (colPair.ContactNormal * (impulse / colPair.ObjectB.Mass));
-                colPair.ObjectB.Position += colPair.ContactPenetration.X < colPair.ContactPenetration.Y ? new Vector2(colPair.ContactPenetration.X, 0) : new Vector2(0, colPair.ContactPenetration.Y);
+                colPair.ObjectB.Position += Math.Abs(colPair.ContactPenetration.X) < Math.Abs(colPair.ContactPenetration.Y) ? new Vector2(colPair.ContactPenetration.X, 0) : new Vector2(0, colPair.ContactPenetration.Y);
                 colPair.ObjectB.Velocity = objectBNewVelocity;
             }
 

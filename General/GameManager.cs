@@ -75,8 +75,8 @@ namespace General
             platform.Mass = 200;
             platform.IsStatic = true;
             platform.Position = new Vector2(100, 200);
-            platform.Size = new Vector2(500, 20);
-            platform.BoxCollider = new Vector2(500, 20);
+            platform.Size = new Vector2(30, 20);
+            platform.BoxCollider = new Vector2(30, 20);
             platform.Friction = new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.5f, DynamicCoefficient = 0.2f };
             platform.Bounciness = 0.8f;
 

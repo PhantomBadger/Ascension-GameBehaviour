@@ -112,11 +112,6 @@ namespace Physics
                 Force += ActiveDynamic;
             }
 
-            if (Tag == "Player")
-            {
-                Console.WriteLine($"Player Velocity {Velocity.X}, {Velocity.Y}");
-            }
-
             //Calculate acceleration using F/m
             if (!IsIgnoringGravity)
             {
