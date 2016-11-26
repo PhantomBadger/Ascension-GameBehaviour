@@ -8,7 +8,7 @@ namespace Physics
 {
     class PhysicsManager
     {
-        public List<RigidBody2D> RigidBodies { get; set; }
+        public List<RigidBody2D> RigidBodies { get; private set; }
 
         /// <summary>
         /// Default Constructor for Physics Manager
@@ -119,7 +119,7 @@ namespace Physics
             Vector2 normalMagnitude = colPair.ContactNormal;
             colPair.ContactNormal.Normalize();
 
-            Console.WriteLine($"Col {colPair.ObjectA.Tag} & {colPair.ObjectB.Tag} Pen Depth: {colPair.ContactPenetration.X}, {colPair.ContactPenetration.Y}");
+            //Console.WriteLine($"Col {colPair.ObjectA.Tag} & {colPair.ObjectB.Tag} Pen Depth: {colPair.ContactPenetration.X}, {colPair.ContactPenetration.Y}");
 
             //Get the velocity along the normal
             float velocityAlongContactNormal = Vector2.Dot(relativeVelocity, colPair.ContactNormal);

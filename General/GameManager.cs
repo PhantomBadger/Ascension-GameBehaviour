@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Physics;
+using AI;
 using System;
 
 namespace General
@@ -18,8 +19,11 @@ namespace General
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
         PhysicsManager physics;
+        AIManager ai;
         Player player;
+        Camera camera;
 
+        KeyboardState oldState;
         List<GameObject> gameObjects = new List<GameObject>();
 
         public GameManager()
@@ -27,6 +31,8 @@ namespace General
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             physics = new PhysicsManager();
+            ai = new AIManager();
+            ai.Initialize();
 
             //Run at a fixed step at 60 FPS
             IsFixedTimeStep = true;
@@ -41,6 +47,13 @@ namespace General
         /// </summary>
         protected override void Initialize()
         {
+            oldState = Keyboard.GetState();
+
+            //Create Camera
+            camera = new Camera();
+            camera.Viewport = new Vector2(GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
+            camera.Position = new Vector2(0);
+
             //Create the Player Component
             player = new Player(new RigidBody2D(new Vector2(0, 0),
                                                 new Vector2(1, 1),
@@ -127,6 +140,8 @@ namespace General
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
+            //Camera Logic
+            camera.Update(gameTime);
 
             //Game Logic
             ControllerHandler();
@@ -144,11 +159,27 @@ namespace General
 
         private void ControllerHandler()
         {
+            KeyboardState newState = Keyboard.GetState();
+
             //Enable Debug mode
-            if (Keyboard.GetState().IsKeyDown(Keys.P))
+            if (newState.IsKeyDown(Keys.P) && !oldState.IsKeyDown(Keys.P))
             {
                 DebugMode = !DebugMode;
             }
+
+            if (newState.IsKeyDown(Keys.U) && !oldState.IsKeyDown(Keys.U))
+            {
+                Platform[] platforms = ai.GeneratePlatforms(camera);
+                for (int i = 0; i < platforms.Length; i++)
+                {
+                    gameObjects.Add(platforms[i]);
+                    physics.RigidBodies.Add(platforms[i]);
+                    platforms[i].Initialize();
+                    platforms[i].LoadContent(Content);
+                }
+            }
+
+            oldState = newState;
         }
 
         /// <summary>
@@ -160,7 +191,13 @@ namespace General
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
             //Draw Code
-            spriteBatch.Begin();
+            spriteBatch.Begin(SpriteSortMode.BackToFront,
+                              BlendState.AlphaBlend,
+                              null,
+                              null,
+                              null,
+                              null,
+                              camera.GetTranslationMatrix());
             for (int i = 0; i < gameObjects.Count; i++)
             {
                 gameObjects[i].Draw(gameTime, spriteBatch, GraphicsDevice);
