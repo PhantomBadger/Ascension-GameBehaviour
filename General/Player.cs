@@ -117,18 +117,6 @@ namespace General
                 //Move Left
                 Force = new Vector2(-PlayerSpeed, Force.Y);
             }
-            /*
-            if (Keyboard.GetState().IsKeyDown(Keys.S))
-            {
-                //Move Down
-                Force = new Vector2(Force.X, PlayerSpeed);
-            }
-            if (Keyboard.GetState().IsKeyDown(Keys.W))
-            {
-                //Move Up
-                Force = new Vector2(Force.X, -JumpSpeed);
-            }
-            */
             if (Keyboard.GetState().IsKeyDown(Keys.Space) && onGround)
             {
                 Force = new Vector2(Force.X, -JumpSpeed);

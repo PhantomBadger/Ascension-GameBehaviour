@@ -15,6 +15,9 @@ namespace General
     {
         public static bool DebugMode = false;
         public static Vector2 Gravity = new Vector2(0, 98.0f);
+        const int InitPlatformDistance = 125;
+        const int YPlatformBuffer = 500;
+        public enum GameState { Countdown, Play, GameOver };
 
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
@@ -22,6 +25,7 @@ namespace General
         AIManager ai;
         Player player;
         Camera camera;
+        GameState currentGameState;
 
         KeyboardState oldState;
         List<GameObject> gameObjects = new List<GameObject>();
@@ -32,11 +36,15 @@ namespace General
             Content.RootDirectory = "Content";
             physics = new PhysicsManager();
             ai = new AIManager();
-            ai.Initialize();
 
             //Run at a fixed step at 60 FPS
             IsFixedTimeStep = true;
             TargetElapsedTime = TimeSpan.FromMilliseconds((1.0f / 60.0f) * 1000);
+
+            //Set screen size
+            graphics.PreferredBackBufferHeight = 750;
+            graphics.PreferredBackBufferWidth = 600;
+            graphics.IsFullScreen = false;
         }
 
         /// <summary>
@@ -47,6 +55,9 @@ namespace General
         /// </summary>
         protected override void Initialize()
         {
+            //Init AI State
+            ai.Initialize(GraphicsDevice);
+
             oldState = Keyboard.GetState();
 
             //Create Camera
@@ -63,38 +74,38 @@ namespace General
                                                 new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.0f, DynamicCoefficient = 0.0f },
                                                 0.8f),
                                 50.0f,
-                                6500.0f);
+                                7500.0f);
             player.BoxCollider = new Vector2(32, 32);
             player.Tag = "Player";
             //Add to the collections
             physics.RigidBodies.Add(player);
             gameObjects.Add(player);
 
-            //Create the Ground Object
+            //Create the Floor Object
             Platform ground = new Platform();
             ground.Mass = 200;
             ground.IsStatic = true;
-            ground.Position = new Vector2(0, 300);
-            ground.Size = new Vector2(500, 20);
-            ground.BoxCollider = new Vector2(500, 20);
+            ground.Position = new Vector2(0, camera.Viewport.Y - 20);
+            ground.Size = new Vector2(camera.Viewport.X, 20);
+            ground.BoxCollider = new Vector2(camera.Viewport.X, 20);
             ground.Friction = new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.9f, DynamicCoefficient = 0.9f };
             ground.Bounciness = 0.0f;
 
             gameObjects.Add(ground);
             physics.RigidBodies.Add(ground);
 
-            //Create an additional platform
-            Platform platform = new Platform();
-            platform.Mass = 200;
-            platform.IsStatic = true;
-            platform.Position = new Vector2(100, 200);
-            platform.Size = new Vector2(30, 20);
-            platform.BoxCollider = new Vector2(30, 20);
-            platform.Friction = new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.5f, DynamicCoefficient = 0.2f };
-            platform.Bounciness = 0.8f;
-
-            gameObjects.Add(platform);
-            physics.RigidBodies.Add(platform);
+            //Create the initial on-screen platforms
+            List<Platform> platforms = new List<Platform>();
+            for (int i = (int)camera.Viewport.Y - InitPlatformDistance; i > 0 - YPlatformBuffer; i -= InitPlatformDistance)
+            {
+                platforms.AddRange(ai.GeneratePlatforms(new Vector2(0, i), camera.Viewport.X));
+            }
+            for (int i = 0; i < platforms.Count; i++)
+            {
+                platforms[i].Initialize();
+                gameObjects.Add(platforms[i]);
+                physics.RigidBodies.Add(platforms[i]);
+            }
 
             //Initialise all our game objects
             for (int i = 0; i < gameObjects.Count; i++)
@@ -102,6 +113,9 @@ namespace General
                 gameObjects[i].Initialize();
             }
             base.Initialize();
+
+            //Set the initial game state
+            currentGameState = GameState.Countdown;
         }
 
         /// <summary>
@@ -140,8 +154,43 @@ namespace General
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-            //Camera Logic
-            camera.Update(gameTime);
+            if (currentGameState == GameState.Play)
+            {
+                //Camera Logic - Move Upwards
+                camera.Update(gameTime);
+
+                //As platforms move off-screen, mark them for destructions
+                bool respawnPlatforms = false;
+                List<int> objectsToRemove = new List<int>();
+                for (int i = 0; i < physics.RigidBodies.Count; i++)
+                {
+                    if (!camera.IsInViewport(physics.RigidBodies[i]) && physics.RigidBodies[i].Tag == "Ground")
+                    {
+                        respawnPlatforms = true;
+                        gameObjects.Remove((GameObject)physics.RigidBodies[i]);
+                        objectsToRemove.Add(i);
+                    }
+                }
+
+                //Remove the platforms
+                for (int i = 0; i < objectsToRemove.Count; i++)
+                {
+                    physics.RigidBodies.RemoveAt(objectsToRemove[i] - i);
+                }
+
+                //If we destroyed some, repopulate some more at the top of the screen
+                if (respawnPlatforms)
+                {
+                    Platform[] platforms = ai.GeneratePlatforms(new Vector2(camera.Position.X, camera.Position.Y - YPlatformBuffer), camera.Viewport.X);
+                    for (int i = 0; i < platforms.Length; i++)
+                    {
+                        platforms[i].Initialize();
+                        platforms[i].LoadContent(Content);
+                        gameObjects.Add(platforms[i]);
+                        physics.RigidBodies.Add(platforms[i]);
+                    }
+                }
+            }
 
             //Game Logic
             ControllerHandler();
@@ -169,14 +218,7 @@ namespace General
 
             if (newState.IsKeyDown(Keys.U) && !oldState.IsKeyDown(Keys.U))
             {
-                Platform[] platforms = ai.GeneratePlatforms(camera);
-                for (int i = 0; i < platforms.Length; i++)
-                {
-                    gameObjects.Add(platforms[i]);
-                    physics.RigidBodies.Add(platforms[i]);
-                    platforms[i].Initialize();
-                    platforms[i].LoadContent(Content);
-                }
+                currentGameState = GameState.Play;
             }
 
             oldState = newState;

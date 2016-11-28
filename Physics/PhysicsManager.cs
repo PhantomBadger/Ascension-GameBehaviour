@@ -152,16 +152,14 @@ namespace Physics
 
             //Assign the current friction to both objects
             //We add together all the active friction components applied to each object
-            int frictionScale = 1;
+
             //Object A
-            colPair.ObjectA.ActiveDynamic += (-(colPair.ObjectB.Friction.DynamicCoefficient) * (colPair.ObjectA.Velocity)) * frictionScale;
-            colPair.ObjectA.ActiveStatic += (-(colPair.ObjectB.Friction.StaticCoefficient) * (new Vector2(colPair.ContactNormal.Y, -colPair.ContactNormal.X))) * frictionScale;
+            colPair.ObjectA.ActiveDynamic += (-(colPair.ObjectB.Friction.DynamicCoefficient) * (colPair.ObjectA.Velocity));
+            colPair.ObjectA.ActiveStatic += (-(colPair.ObjectB.Friction.StaticCoefficient) * (new Vector2(colPair.ContactNormal.Y, -colPair.ContactNormal.X)));
 
             //Object B
-            colPair.ObjectB.ActiveDynamic += (-(colPair.ObjectA.Friction.DynamicCoefficient) * (colPair.ObjectB.Velocity)) * frictionScale;
-            colPair.ObjectB.ActiveStatic += (-(colPair.ObjectA.Friction.StaticCoefficient) * (new Vector2(colPair.ContactNormal.Y, -colPair.ContactNormal.X))) * frictionScale;
-
+            colPair.ObjectB.ActiveDynamic += (-(colPair.ObjectA.Friction.DynamicCoefficient) * (colPair.ObjectB.Velocity));
+            colPair.ObjectB.ActiveStatic += (-(colPair.ObjectA.Friction.StaticCoefficient) * (new Vector2(colPair.ContactNormal.Y, -colPair.ContactNormal.X)));
         }
-
     }
 }

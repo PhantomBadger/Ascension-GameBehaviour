@@ -17,6 +17,10 @@ namespace General
 
         private float moveRate = 0.5f;
 
+        private const float MaxMoveRate = 2.5f;
+        private const float RateStep = 0.5f;
+        private const float IncreaseRate = 5.0f;
+
         /// <summary>
         /// Get the middle of the screen
         /// </summary>
@@ -80,10 +84,10 @@ namespace General
         {
             //Use a simple AABB Detection with the current viewport and the 
             //rigidbody's box collider
-            return (Position.X + (Viewport.X / 2) > rigidbody.Position.X &&
-                    Position.X - (Viewport.X / 2) < rigidbody.Position.X + rigidbody.BoxCollider.X &&
-                    Position.Y + (Viewport.Y / 2) > rigidbody.Position.Y &&
-                    Position.Y - (Viewport.Y / 2) < rigidbody.Position.Y + rigidbody.BoxCollider.Y);
+            return (Position.X + Viewport.X > rigidbody.Position.X &&
+                    Position.X - Viewport.X < rigidbody.Position.X + rigidbody.BoxCollider.X &&
+                    Position.Y + Viewport.Y > rigidbody.Position.Y &&
+                    Position.Y - Viewport.Y < rigidbody.Position.Y + rigidbody.BoxCollider.Y);
         }
     }
 }

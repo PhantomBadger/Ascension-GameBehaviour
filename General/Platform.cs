@@ -13,6 +13,7 @@ namespace General
     class Platform : RigidBody2D
     {
         public Vector2 Size { get; set; }
+        public Texture2D Texture { get; set; }
 
         public Platform()
         {
@@ -44,11 +45,12 @@ namespace General
 
         public override void Draw(GameTime gameTime, SpriteBatch spriteBatch, GraphicsDevice graphicsDevice)
         {
-            //Console.WriteLine($"Position {Transform.X}, {Transform.Y} Size {Size.X}, {Size.Y}");
-            Texture2D tempTex = new Texture2D(graphicsDevice, 1, 1);
-            tempTex.SetData(new Color[] { Color.DarkGray });
-
-            spriteBatch.Draw(tempTex, new Rectangle(Position.ToPoint(), Size.ToPoint()), Color.DarkGray);
+            if (Texture == null)
+            {
+                Texture = new Texture2D(graphicsDevice, 1, 1);
+                Texture.SetData(new Color[] { Color.DarkGray });
+            }
+            spriteBatch.Draw(Texture, new Rectangle(Position.ToPoint(), Size.ToPoint()), Color.DarkGray);
 
             base.Draw(gameTime, spriteBatch, graphicsDevice);
         }
