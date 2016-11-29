@@ -51,7 +51,7 @@ namespace General
         /// <param name="content">Content Manager</param>
         public override void LoadContent(ContentManager content)
         {
-            playerTexture = content.Load<Texture2D>("playerSprite.png");
+            playerTexture = content.Load<Texture2D>("alienGreen_front.png");
             base.LoadContent(content);
         }
 
@@ -97,8 +97,7 @@ namespace General
         /// <param name="spriteBatch">Sprite Batch</param>
         public override void Draw(GameTime gameTime, SpriteBatch spriteBatch, GraphicsDevice graphicsDevice)
         {
-            Rectangle drawRect = new Rectangle((int)Position.X, (int)Position.Y, playerTexture.Width, playerTexture.Height);
-            spriteBatch.Draw(playerTexture, drawRect, Color.White);
+            spriteBatch.Draw(playerTexture, Position, null, Color.White, Rotation.Z, Vector2.Zero, Scale, SpriteEffects.None, 0.0f);
             base.Draw(gameTime, spriteBatch, graphicsDevice);
         }
 

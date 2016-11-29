@@ -56,7 +56,7 @@ namespace General
         protected override void Initialize()
         {
             //Init AI State
-            ai.Initialize(GraphicsDevice);
+            ai.Initialize();
 
             oldState = Keyboard.GetState();
 
@@ -67,7 +67,7 @@ namespace General
 
             //Create the Player Component
             player = new Player(new RigidBody2D(new Vector2(0, 0),
-                                                new Vector2(1, 1),
+                                                new Vector2(0.3f, 0.3f),
                                                 new Vector3(0, 0, 0),
                                                 0.5f,
                                                 false,
@@ -75,7 +75,8 @@ namespace General
                                                 0.8f),
                                 75.0f,
                                 7500.0f);
-            player.BoxCollider = new Vector2(32, 32);
+
+            player.BoxCollider = new Vector2(31.5f, 45);
             player.Tag = "Player";
             //Add to the collections
             physics.RigidBodies.Add(player);
@@ -86,13 +87,20 @@ namespace General
             ground.Mass = 200;
             ground.IsStatic = true;
             ground.Position = new Vector2(0, camera.Viewport.Y - 20);
+            ground.Scale = new Vector2(0.2f, 0.2f);
             ground.Size = new Vector2(camera.Viewport.X, 20);
             ground.BoxCollider = new Vector2(camera.Viewport.X, 20);
             ground.Friction = new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.9f, DynamicCoefficient = 0.9f };
             ground.Bounciness = 0.0f;
 
+            //Create Background Object
+            Background bg = new Background();
+            bg.SceneCamera = camera;
+            bg.TextureFile = "blue_grass.png";
+
             gameObjects.Add(ground);
             physics.RigidBodies.Add(ground);
+            gameObjects.Add(bg);
 
             //Create the initial on-screen platforms
             List<Platform> platforms = new List<Platform>();

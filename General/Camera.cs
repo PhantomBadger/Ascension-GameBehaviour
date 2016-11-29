@@ -55,7 +55,6 @@ namespace General
 
                 //Auto Scroll Up
                 Position -= new Vector2(0, moveRate);
-                Console.WriteLine(moveRate);
             }
             else
             {

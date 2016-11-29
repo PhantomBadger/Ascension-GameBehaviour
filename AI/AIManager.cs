@@ -24,7 +24,9 @@ namespace AI
         {
             public RigidBody2D.FrictionCoefficients FrictionCoefficients { get; set; }
             public float Bounciness { get; set; }
-            public Texture2D Texture { get; set; }
+            public string TextureLeft { get; set; }
+            public string TextureMid { get; set; }
+            public string TextureRight { get; set; }
         }
         private PlatformComponents[] platformPrefabs;
         private Random rand;
@@ -33,7 +35,7 @@ namespace AI
         /// <summary>
         /// Populate the platform templates
         /// </summary>
-        public void Initialize(GraphicsDevice graphicsDevice)
+        public void Initialize()
         {
             platformPrefabs = new PlatformComponents[4];
             rand = new Random();
@@ -41,26 +43,30 @@ namespace AI
             //Create the Standard Platform Object Template
             platformPrefabs[0] = new PlatformComponents() { FrictionCoefficients = new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.9f, DynamicCoefficient = 0.9f },
                                                             Bounciness = 0.1f,
-                                                            Texture = new Texture2D(graphicsDevice, 1, 1) };
-            platformPrefabs[0].Texture.SetData(new Color[] { Color.DarkGray });
+                                                            TextureLeft = "grassLeft.png",
+                                                            TextureMid = "grassMid.png",
+                                                            TextureRight = "grassRight.png" };
 
             //Create the Ice Platform Object Template
             platformPrefabs[1] = new PlatformComponents() { FrictionCoefficients = new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.4f, DynamicCoefficient = 0.4f },
                                                             Bounciness = 0.0f,
-                                                            Texture = new Texture2D(graphicsDevice, 1, 1) };
-            platformPrefabs[1].Texture.SetData(new Color[] { Color.LightCyan });
+                                                            TextureLeft = "snowLeft.png",
+                                                            TextureMid = "snowMid.png",
+                                                            TextureRight = "snowRight.png" };
 
             //Create the Sticky Platform Object Template
             platformPrefabs[2] = new PlatformComponents() { FrictionCoefficients = new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 1.5f, DynamicCoefficient = 1.5f },
                                                             Bounciness = 0.0f,
-                                                            Texture = new Texture2D(graphicsDevice, 1, 1) };
-            platformPrefabs[2].Texture.SetData(new Color[] { Color.Orange });
+                                                            TextureLeft = "sandLeft.png",
+                                                            TextureMid = "sandMid.png",
+                                                            TextureRight = "sandRight.png" };
 
             //Create the Bouncy Platform Object Template
             platformPrefabs[3] = new PlatformComponents() { FrictionCoefficients = new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.9f, DynamicCoefficient = 0.9f },
                                                             Bounciness = 0.8f,
-                                                            Texture = new Texture2D(graphicsDevice, 1, 1) };
-            platformPrefabs[3].Texture.SetData(new Color[] { Color.LimeGreen });
+                                                            TextureLeft = "planetLeft.png",
+                                                            TextureMid = "planetMid.png",
+                                                            TextureRight = "planetRight.png"};
         }
                 
         /// <summary>
@@ -98,6 +104,11 @@ namespace AI
                 platforms[i].Friction = platformPrefabs[platformType].FrictionCoefficients;
                 platforms[i].Bounciness = platformPrefabs[platformType].Bounciness;
 
+                //Set the Texture
+                platforms[i].TextureLeftFile = platformPrefabs[platformType].TextureLeft;
+                platforms[i].TextureMidFile = platformPrefabs[platformType].TextureMid;
+                platforms[i].TextureRightFile = platformPrefabs[platformType].TextureRight;
+
                 //Calculate the size and positions of each platform
                 platforms[i].Size = new Vector2(platformSize, PlatformYSize);
                 platforms[i].BoxCollider = new Vector2(platformSize, PlatformYSize);
@@ -110,8 +121,9 @@ namespace AI
                                                          (spaceSize / (numOfPlatforms > 1 ? numOfPlatforms - 1 : 1)))) + 
                                                     (numOfPlatforms == 1 ? spaceSize / 2 : 0)),
                                                     positionY);
-                //Set the Texture
-                platforms[i].Texture = platformPrefabs[platformType].Texture;
+
+                //Set the Scale
+                platforms[i].Scale = new Vector2(0.2f, 0.2f);
             }
 
             //Return these generated platforms
