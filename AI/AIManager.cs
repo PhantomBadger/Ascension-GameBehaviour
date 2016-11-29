@@ -51,7 +51,7 @@ namespace AI
             platformPrefabs[1].Texture.SetData(new Color[] { Color.LightCyan });
 
             //Create the Sticky Platform Object Template
-            platformPrefabs[2] = new PlatformComponents() { FrictionCoefficients = new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 1.0f, DynamicCoefficient = 1.0f },
+            platformPrefabs[2] = new PlatformComponents() { FrictionCoefficients = new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 1.5f, DynamicCoefficient = 1.5f },
                                                             Bounciness = 0.0f,
                                                             Texture = new Texture2D(graphicsDevice, 1, 1) };
             platformPrefabs[2].Texture.SetData(new Color[] { Color.Orange });
@@ -108,7 +108,7 @@ namespace AI
                     //And if its only 1 platform, we add some extra space at the start so its centered
                 platforms[i].Position = new Vector2(pos.X + ((i * (platformSize + spaceSize + 
                                                          (spaceSize / (numOfPlatforms > 1 ? numOfPlatforms - 1 : 1)))) + 
-                                                    (numOfPlatforms == 1 && i == 0 ? spaceSize / 2 : 0)),
+                                                    (numOfPlatforms == 1 ? spaceSize / 2 : 0)),
                                                     positionY);
                 //Set the Texture
                 platforms[i].Texture = platformPrefabs[platformType].Texture;

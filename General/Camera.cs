@@ -16,9 +16,10 @@ namespace General
         public Vector2 Viewport { get; set; }
 
         private float moveRate = 0.5f;
+        private float increaseCounter = 0.0f;
 
         private const float MaxMoveRate = 2.5f;
-        private const float RateStep = 0.5f;
+        private const float RateStep = 0.25f;
         private const float IncreaseRate = 5.0f;
 
         /// <summary>
@@ -45,8 +46,16 @@ namespace General
         {
             if (!GameManager.DebugMode)
             {
+                if (moveRate < MaxMoveRate && 
+                    (increaseCounter += (float)gameTime.ElapsedGameTime.TotalSeconds) > IncreaseRate)
+                {
+                    increaseCounter = 0;
+                    moveRate += RateStep;
+                }
+
                 //Auto Scroll Up
                 Position -= new Vector2(0, moveRate);
+                Console.WriteLine(moveRate);
             }
             else
             {

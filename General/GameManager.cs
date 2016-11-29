@@ -73,7 +73,7 @@ namespace General
                                                 false,
                                                 new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.0f, DynamicCoefficient = 0.0f },
                                                 0.8f),
-                                50.0f,
+                                75.0f,
                                 7500.0f);
             player.BoxCollider = new Vector2(32, 32);
             player.Tag = "Player";
