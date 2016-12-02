@@ -132,13 +132,18 @@ namespace Physics
             //Calculate impulse
             float impulse = (-(1 + coefficientOfRestitution) * velocityAlongContactNormal) / (invMassA + invMassB);
 
+            float objAVelAcrossNormal = Vector2.Dot(colPair.ObjectA.Velocity, colPair.ContactNormal);
+            float objBVelAcrossNormal = Vector2.Dot(colPair.ObjectB.Velocity, colPair.ContactNormal);
+            float objAResolutionWeighting = (objAVelAcrossNormal + objBVelAcrossNormal) / objAVelAcrossNormal;
+            float objBResolutionWeighting = (objAVelAcrossNormal + objBVelAcrossNormal) / objBVelAcrossNormal;
+
             //Resolve the collision with a new velocity and position if they're not static
             if (!colPair.ObjectA.IsStatic)
             {
                 //Create a new velocity
                 Vector2 objectANewVelocity = colPair.ObjectA.Velocity + (colPair.ContactNormal * (impulse / colPair.ObjectA.Mass));
                 //Displace by the smallest pen depth, dont compare with signs
-                colPair.ObjectA.Position -= Math.Abs(colPair.ContactPenetration.X) < Math.Abs(colPair.ContactPenetration.Y) ? new Vector2(colPair.ContactPenetration.X, 0) : new Vector2(0, colPair.ContactPenetration.Y);
+                colPair.ObjectA.Position -= Math.Abs(colPair.ContactPenetration.X) < Math.Abs(colPair.ContactPenetration.Y) ? new Vector2(colPair.ContactPenetration.X * objAResolutionWeighting, 0) : new Vector2(0, colPair.ContactPenetration.Y * objAResolutionWeighting);
                 colPair.ObjectA.Velocity = objectANewVelocity;
             }
 
@@ -146,7 +151,7 @@ namespace Physics
             {
                 //Create a new velocity
                 Vector2 objectBNewVelocity = colPair.ObjectB.Velocity - (colPair.ContactNormal * (impulse / colPair.ObjectB.Mass));
-                colPair.ObjectB.Position += Math.Abs(colPair.ContactPenetration.X) < Math.Abs(colPair.ContactPenetration.Y) ? new Vector2(colPair.ContactPenetration.X, 0) : new Vector2(0, colPair.ContactPenetration.Y);
+                colPair.ObjectB.Position += Math.Abs(colPair.ContactPenetration.X) < Math.Abs(colPair.ContactPenetration.Y) ? new Vector2(colPair.ContactPenetration.X * objBResolutionWeighting, 0) : new Vector2(0, colPair.ContactPenetration.Y * objBResolutionWeighting);
                 colPair.ObjectB.Velocity = objectBNewVelocity;
             }
 

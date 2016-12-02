@@ -29,6 +29,8 @@ namespace Physics
         public float Bounciness { get; set; }
 
         private SpriteFont debugFont;
+        private Texture2D velocityTex;
+        private Texture2D colTex;
 
         const float AirResistance = 0.001f;
         const float MinPosChange = 0.1f;
@@ -158,14 +160,23 @@ namespace Physics
         /// <param name="gameTime">Current Game Time</param>
         public override void Draw(GameTime gameTime, SpriteBatch spriteBatch, GraphicsDevice graphicsDevice)
         {
+            //Spawn debug textures
+            if (velocityTex == null)
+            {
+                velocityTex = new Texture2D(graphicsDevice, 1, 1);
+                velocityTex.SetData(new Color[] { Color.DarkGray });
+            }
+            if (colTex == null)
+            {
+                colTex = new Texture2D(graphicsDevice, 1, 1);
+                colTex.SetData(new Color[] { Color.Lime });
+            }
+
             if (GameManager.DebugMode)
             {
                 //Draw Debug Lines
                 Vector2 velocityLine = (Position + Velocity) - Position;
                 float lineAngle = (float)Math.Atan2(velocityLine.Y, velocityLine.X);
-
-                Texture2D velocityTex = new Texture2D(graphicsDevice, 1, 1);
-                velocityTex.SetData(new Color[] { Color.DarkGray });
 
                 spriteBatch.Draw(velocityTex,
                     new Rectangle((int)Position.X, (int)Position.Y, (int)velocityLine.Length(), 3),
@@ -188,13 +199,11 @@ namespace Physics
                     0);
 
 
-                spriteBatch.DrawString(debugFont, $"({Velocity.X}, {Velocity.Y})", new Vector2(Position.X, Position.Y - 15), Color.White);
+                spriteBatch.DrawString(debugFont, $"({Velocity.X}, {Velocity.Y})", new Vector2(Position.X, Position.Y - 15), Color.Red);
                 //spriteBatch.DrawString(debugFont, $"Acceleration: ({Acceleration.X}, {Acceleration.Y})", new Vector2(0, 0), Color.White);
                 //spriteBatch.DrawString(debugFont, $"Velocity: ({Velocity.X}, {Velocity.Y})", new Vector2(0, 20), Color.White);
 
                 //Draw Debug Box Collider
-                Texture2D colTex = new Texture2D(graphicsDevice, 1, 1);
-                colTex.SetData(new Color[] { Color.Lime });
 
                 //Top Line
                 spriteBatch.Draw(colTex, new Rectangle((int)Position.X, (int)Position.Y, (int)BoxCollider.X, 3), Color.White);

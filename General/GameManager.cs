@@ -26,12 +26,14 @@ namespace General
         Player player;
         Camera camera;
         GameState currentGameState;
+        Vector2 camPosOnDebug;
 
         KeyboardState oldState;
         List<GameObject> gameObjects = new List<GameObject>();
 
         public GameManager()
         {
+            camPosOnDebug = new Vector2(0);
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             physics = new PhysicsManager();
@@ -167,35 +169,38 @@ namespace General
                 //Camera Logic - Move Upwards
                 camera.Update(gameTime);
 
-                //As platforms move off-screen, mark them for destructions
-                bool respawnPlatforms = false;
-                List<int> objectsToRemove = new List<int>();
-                for (int i = 0; i < physics.RigidBodies.Count; i++)
+                if (!DebugMode)
                 {
-                    if (!camera.IsInViewport(physics.RigidBodies[i]) && physics.RigidBodies[i].Tag == "Ground")
+                    //As platforms move off-screen, mark them for destructions
+                    bool respawnPlatforms = false;
+                    List<int> objectsToRemove = new List<int>();
+                    for (int i = 0; i < physics.RigidBodies.Count; i++)
                     {
-                        respawnPlatforms = true;
-                        gameObjects.Remove((GameObject)physics.RigidBodies[i]);
-                        objectsToRemove.Add(i);
+                        if (!camera.IsInViewport(physics.RigidBodies[i]) && physics.RigidBodies[i].Tag == "Ground")
+                        {
+                            respawnPlatforms = true;
+                            gameObjects.Remove((GameObject)physics.RigidBodies[i]);
+                            objectsToRemove.Add(i);
+                        }
                     }
-                }
 
-                //Remove the platforms
-                for (int i = 0; i < objectsToRemove.Count; i++)
-                {
-                    physics.RigidBodies.RemoveAt(objectsToRemove[i] - i);
-                }
-
-                //If we destroyed some, repopulate some more at the top of the screen
-                if (respawnPlatforms)
-                {
-                    Platform[] platforms = ai.GeneratePlatforms(new Vector2(camera.Position.X, camera.Position.Y - YPlatformBuffer), camera.Viewport.X);
-                    for (int i = 0; i < platforms.Length; i++)
+                    //Remove the platforms
+                    for (int i = 0; i < objectsToRemove.Count; i++)
                     {
-                        platforms[i].Initialize();
-                        platforms[i].LoadContent(Content);
-                        gameObjects.Add(platforms[i]);
-                        physics.RigidBodies.Add(platforms[i]);
+                        physics.RigidBodies.RemoveAt(objectsToRemove[i] - i);
+                    }
+
+                    //If we destroyed some, repopulate some more at the top of the screen
+                    if (respawnPlatforms)
+                    {
+                        Platform[] platforms = ai.GeneratePlatforms(new Vector2(camera.Position.X, camera.Position.Y - YPlatformBuffer), camera.Viewport.X);
+                        for (int i = 0; i < platforms.Length; i++)
+                        {
+                            platforms[i].Initialize();
+                            platforms[i].LoadContent(Content);
+                            gameObjects.Add(platforms[i]);
+                            physics.RigidBodies.Add(platforms[i]);
+                        }
                     }
                 }
             }
@@ -221,7 +226,16 @@ namespace General
             //Enable Debug mode
             if (newState.IsKeyDown(Keys.P) && !oldState.IsKeyDown(Keys.P))
             {
-                DebugMode = !DebugMode;
+                if (DebugMode)
+                {
+                    DebugMode = false;
+                    camera.Position = camPosOnDebug;
+                }
+                else
+                {
+                    DebugMode = true;
+                    camPosOnDebug = camera.Position;
+                }
             }
 
             if (newState.IsKeyDown(Keys.U) && !oldState.IsKeyDown(Keys.U))
