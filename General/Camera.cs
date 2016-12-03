@@ -15,12 +15,12 @@ namespace General
         public Vector2 Position { get; set; }
         public Vector2 Viewport { get; set; }
 
-        private float moveRate = 0.5f;
+        private float moveRate = 0.0f;
         private float increaseCounter = 0.0f;
 
         private const float MaxMoveRate = 2.5f;
-        private const float RateStep = 0.25f;
-        private const float IncreaseRate = 5.0f;
+        private const float RateStep = 0.5f;
+        private const float IncreaseRate = 2.5f;
 
         /// <summary>
         /// Get the middle of the screen

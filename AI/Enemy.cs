@@ -23,10 +23,14 @@ namespace AI
         public WaypointNode NextNode { get; set; }
 
         private Texture2D enemyTexture;
+        private Texture2D waypointTex;
         private bool onGround = false;
         private Queue<WaypointNode> currentPath;
+        private Platform currentPlatform;
+        private TimeSpan gameUpdateStep;
 
-        private const float MinDistance = 0.05f;
+        private const float MinDistance = 0.5f;
+        private const float MinJumpHeightTrigger = 15.0f;
 
         /// <summary>
         /// Constructor for the Enemy Class with full info
@@ -34,7 +38,7 @@ namespace AI
         /// <param name="newRigidBody">RigidBody component of the Enemy</param>
         /// <param name="newSpeed">Enemy's default movement speed</param>
         /// <param name="newJumpSpeed">Enemy's default jump speed</param>
-        public Enemy(RigidBody2D newRigidBody, float newSpeed, float newJumpSpeed) :
+        public Enemy(RigidBody2D newRigidBody, float newSpeed, float newJumpSpeed, TimeSpan newUpdate) :
             base(newRigidBody.Position, newRigidBody.Scale, newRigidBody.Rotation, newRigidBody.Mass, newRigidBody.IsStatic, newRigidBody.Friction, newRigidBody.Bounciness)
         {
             EnemySpeed = newSpeed;
@@ -42,6 +46,7 @@ namespace AI
             Tag = "Enemy";
             CurrentState = EnemyState.AtGoal;
 
+            gameUpdateStep = newUpdate;
             currentPath = new Queue<WaypointNode>();
         }
         
@@ -69,6 +74,7 @@ namespace AI
         /// </summary>
         public override void Initialize()
         {
+            currentPath = new Queue<WaypointNode>();
             base.Initialize();
         }
 
@@ -78,16 +84,17 @@ namespace AI
         /// <param name="gameTime">Current Game Time</param>
         public override void Update(GameTime gameTime)
         {
-            //Set onGround to false
-            onGround = false;
-
             //React based on current state
             switch (CurrentState)
             {
                 case EnemyState.AtGoal:
                     {
                         //Select a new goal and populate the path
-                        currentPath = AI.AStarSearch(NextNode, AI.GetNewGoalNode());
+                        WaypointNode goalNode = AI.GetNewGoalNode();
+                        if (goalNode != null)
+                        {
+                            currentPath = AI.AStarSearch(NextNode, goalNode);
+                        }
                         CurrentState = EnemyState.SelectingNode;
 
                         //This is a good use of goto I swear! (http://stackoverflow.com/a/174223/4203525)
@@ -98,8 +105,15 @@ namespace AI
                     {
                         //Select the next node in the list then begin travelling to it
                         PreviousNode = NextNode;
-                        NextNode = currentPath.Dequeue();
-                        CurrentState = EnemyState.TravellingToNode;
+                        if (currentPath != null && currentPath.Count > 0)
+                        {
+                            NextNode = currentPath.Dequeue();
+                            CurrentState = EnemyState.TravellingToNode;
+                        }
+                        else
+                        {
+                            CurrentState = EnemyState.AtGoal;
+                        }
 
                         //goto case EnemyState.TravellingToNode;
                         break;
@@ -108,42 +122,92 @@ namespace AI
                     {
                         //Travel to the next node
                         Vector2 dxy = NextNode.Position - Position;
-                        if (dxy.Length() < MinDistance)
+                        //Console.WriteLine($"Next Node: ({NextNode.Position.X}, {NextNode.Position.Y}) CurrentPos ({Position.X}, {Position.Y})");
+                        Rectangle tempRec = new Rectangle(Position.ToPoint(), BoxCollider.ToPoint());
+                        if (tempRec.Contains(NextNode.Position) && onGround)
                         {
                             //If we have items left in the queue go to selecting node, if not we're at goal
                             CurrentState = currentPath.Count > 0 ? EnemyState.SelectingNode : EnemyState.AtGoal;
                         }
-
-                        MoveTowards(NextNode.Position);
+                        else
+                        {
+                            MoveTowards(NextNode);
+                        }
 
                         break;
                     }
             }
 
+            //Set onGround to false
+            onGround = false;
+
             //Call RigidBody Update
             base.Update(gameTime);
-
-
         }
 
-        private void MoveTowards(Vector2 targetPosition)
+        private void MoveTowards(WaypointNode targetNode)
         {
-            Vector2 dxy = targetPosition - Position;
+            //Determine if the next node is on a different platform than the one we're on
+            //Or will it require jumping between platforms
+            Vector2 deltaXY = targetNode.Position - (new Vector2(Position.X + (BoxCollider.X / 2), Position.Y));
+            Vector2 nodeDeltaXY = targetNode.Position - PreviousNode.Position;
 
-            //Move Vertically if it's above us or on a different platform
-            if (dxy.Y > 0 || NextNode.ConnectedPlatform != PreviousNode.ConnectedPlatform)
+            //Are we on the same platform as our current target node
+            if (onGround && targetNode.ConnectedPlatform == currentPlatform)
             {
-                Jump();
-            }
+                //Estimate a 'slow-down' location, where we hold the opposite direction to reduce velocity
+                double numOfFramesToSlowdown = ((Math.Abs(Velocity.X) + EnemySpeed) * gameUpdateStep.TotalSeconds) / (EnemySpeed * (1/Mass));
+                double distanceFromEndToSlowdown = numOfFramesToSlowdown * Math.Abs(Velocity.X);
+                distanceFromEndToSlowdown /= (currentPlatform.Friction.DynamicCoefficient);
+                distanceFromEndToSlowdown *= 10;
 
-            //If we're at a different X value to it, move in the right direction
-            if (dxy.X >= MinDistance)
-            {
-                MoveRight();
+                Console.WriteLine($"slowdownDist {distanceFromEndToSlowdown}, curDist {deltaXY.X}");
+
+                //If we're within that distance
+                if (Math.Abs(deltaXY.X) < distanceFromEndToSlowdown)
+                {
+                    Console.WriteLine("Slowing Down");
+                    //Move in Opposite direction for num of frames
+                    if (deltaXY.X < 0)
+                    {
+                        MoveRight();
+                    }
+                    else
+                    {
+                        MoveLeft();
+                    }
+                }
+                else
+                {
+                    //Move in direction
+                    if (deltaXY.X < 0)
+                    {
+                        MoveLeft();
+                    }
+                    else
+                    {
+                        MoveRight();
+                    }
+                }
             }
-            else if (dxy.X <= -MinDistance)
+            else
             {
-                MoveLeft();
+                //Move Vertically if it's above us or on a different platform
+                if ((Math.Abs(deltaXY.Y) > MinJumpHeightTrigger) ||
+                    (Math.Abs(deltaXY.X) > MinDistance && NextNode.ConnectedPlatform != PreviousNode.ConnectedPlatform))
+                {
+                    Jump();
+                }
+
+                //If we're at a different X value to it, move in the right direction
+                if (deltaXY.X >= MinDistance)
+                {
+                    MoveRight();
+                }
+                else if (deltaXY.X <= -MinDistance)
+                {
+                    MoveLeft();
+                }
             }
         }
 
@@ -171,8 +235,11 @@ namespace AI
         private void Jump()
         {
             //Move Left
-            Force = new Vector2(Force.X, -JumpSpeed);
-            onGround = false;
+            if (onGround)
+            {
+                Force = new Vector2(Force.X, -JumpSpeed);
+                onGround = false;
+            }
         }
 
         /// <summary>
@@ -182,7 +249,41 @@ namespace AI
         /// <param name="spriteBatch">Sprite Batch</param>
         public override void Draw(GameTime gameTime, SpriteBatch spriteBatch, GraphicsDevice graphicsDevice)
         {
+            //Create waypoint texture
+            if (waypointTex == null)
+            {
+                waypointTex = new Texture2D(graphicsDevice, 1, 1);
+                waypointTex.SetData(new Color[] { Color.White });
+            }
+
             spriteBatch.Draw(enemyTexture, Position, null, Color.White, Rotation.Z, Vector2.Zero, Scale, SpriteEffects.None, 0.0f);
+
+            if (GameManager.DebugMode && currentPath != null && currentPath.Count > 0)
+            {
+                //Draw his planned path in red
+                WaypointNode prevNode = NextNode;
+                spriteBatch.Draw(waypointTex, new Rectangle((int)prevNode.Position.X - 3, (int)prevNode.Position.Y - 3, 6, 6), Color.Yellow);
+                foreach (WaypointNode node in currentPath)
+                {
+                    //Draw Waypoints
+                    spriteBatch.Draw(waypointTex, new Rectangle((int)node.Position.X - 3, (int)node.Position.Y - 3, 6, 6), Color.Red);
+
+                    Vector2 waypointLine = node.Position - prevNode.Position;
+                    float lineAngle = (float)Math.Atan2(waypointLine.Y, waypointLine.X);
+
+                    spriteBatch.Draw(waypointTex,
+                        new Rectangle((int)prevNode.Position.X, (int)prevNode.Position.Y, (int)waypointLine.Length(), 2),
+                        null,
+                        prevNode == NextNode ? Color.Yellow : Color.Red,
+                        lineAngle,
+                        new Vector2(0, 0),
+                        SpriteEffects.None,
+                        0);
+
+                    prevNode = node;
+                }
+            }
+
             base.Draw(gameTime, spriteBatch, graphicsDevice);
         }
 
@@ -195,6 +296,7 @@ namespace AI
                 //Also check if the collided object is below me
                 //Console.WriteLine("On the ground");
                 onGround = true;
+                currentPlatform = (Platform)collidedObject;
             }
             base.OnCollision(col);
         }

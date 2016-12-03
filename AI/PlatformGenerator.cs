@@ -17,7 +17,7 @@ namespace AI
         private const int MaxPlatformSpacePercentOfScreen = 30;
         private const int GenerationPosYOffset = 0;
         public const int PlatformYSize = 20;
-        public const float WaypointEdgeBuffer = 10.0f;
+        public const float WaypointEdgeBuffer = 20.0f;
 
         //Object Templates that are re-used when generating
         //Friction and Bounciness
@@ -245,39 +245,65 @@ namespace AI
                     }
                     catch
                     {
-                        //Find closest waypoint on previous row and connect to it
-                        WaypointNode closestToPrevEdge, closestToLeftNode;
+                        //Only do this if it's the first or last platform gap
+                        //There's some weird behaviour if it tries to do it with the middle gaps
+                        //When encountering certain platform compositions
+                        //This is a bit of a hacky workaround
 
-                        //Find closest to Previous Edge Node
-                        List<WaypointNode> sortedList = new List<WaypointNode>();
-                        for (int j = 0; j < PreviousPlatformRow.Length; j++)
+                        //With 4 platforms on the current row and 2 on the previous, the waypoint lines overlap
+                        //the platforms, and not amount of intersection checks I am running can seem to detect this
+                        //and remove it
+                        //I suspect either due to the Monogame axis being inversed, or the scale of the drawing making
+                        //it appear to overlap when it doesnt
+                        //So in order to avoid this:
+                        /*
+                                    *                 *
+                            ____________            ____________
+                            |__________|            |__________|
+
+                                 *                        *
+                        ___________                     ____________
+                        ___________|                    |___________
+
+                        It tries to connect the waypoints to the opposite top to allow you to jump up, however the waypoint line
+                        intersects with the platform, or it's so close it would ruin the AI but appears to intersect
+                        due to scale
+                        */
+                        //We do a hacky thing where it only makes paths up on the edges of the arena
+                        if (i == 1 || i == CurrentPlatformRow.Length - 1)
                         {
-                            sortedList.AddRange(PreviousPlatformRow[j].ConnectedWaypoints);
+                            //Find closest waypoint on previous row and connect to it
+                            WaypointNode closestToPrevEdge, closestToLeftNode;
+
+                            //Find closest to Previous Edge Node
+                            List<WaypointNode> sortedList = new List<WaypointNode>();
+                            for (int j = 0; j < PreviousPlatformRow.Length; j++)
+                            {
+                                sortedList.AddRange(PreviousPlatformRow[j].ConnectedWaypoints);
+                            }
+                            //Sort by distance to previous edge on X (to the right only)
+                            sortedList.RemoveAll((n1) => n1.Position.X <= previousEdgeNode.ConnectedPlatform.Position.X + previousEdgeNode.ConnectedPlatform.BoxCollider.X);
+                            sortedList.Sort((n1, n2) => (n1.Position.X - previousEdgeNode.Position.X).CompareTo(n2.Position.X - previousEdgeNode.Position.X));
+                            closestToPrevEdge = sortedList[0];
+
+                            //Find closest to left edge node
+                            sortedList.Clear();
+                            for (int j = 0; j < PreviousPlatformRow.Length; j++)
+                            {
+                                sortedList.AddRange(PreviousPlatformRow[j].ConnectedWaypoints);
+                            }
+                            //Sort by distance to previous edge on X (to the right only)
+                            sortedList.RemoveAll((n1) => n1.Position.X >= leftNode.ConnectedPlatform.Position.X);
+                            sortedList.Sort((n1, n2) => (leftNode.Position.X - n1.Position.X).CompareTo(leftNode.Position.X - n2.Position.X));
+                            closestToLeftNode = sortedList[0];
+
+                            //Connect to the visible waypoints on the area below
+                            closestToLeftNode.ConnectedNodes.Add(leftNode);
+                            leftNode.ConnectedNodes.Add(closestToLeftNode);
+
+                            previousEdgeNode.ConnectedNodes.Add(closestToPrevEdge);
+                            closestToPrevEdge.ConnectedNodes.Add(previousEdgeNode);
                         }
-                        //Sort by distance to previous edge on X (to the right only)
-                        sortedList.RemoveAll((n1) => n1.Position.X <= previousEdgeNode.Position.X);
-                        sortedList.Sort((n1, n2) => (n1.Position.X - previousEdgeNode.Position.X).CompareTo(n2.Position.X - previousEdgeNode.Position.X));
-                        closestToPrevEdge = sortedList[0];
-
-                        //Find closest to left edge node
-                        sortedList.Clear();
-                        for (int j = 0; j < PreviousPlatformRow.Length; j++)
-                        {
-                            sortedList.AddRange(PreviousPlatformRow[j].ConnectedWaypoints);
-                        }
-                        //Sort by distance to previous edge on X (to the right only)
-                        sortedList.RemoveAll((n1) => n1.Position.X >= leftNode.Position.X);
-                        sortedList.Sort((n1, n2) => (leftNode.Position.X - n1.Position.X).CompareTo(leftNode.Position.X - n2.Position.X));
-                        closestToLeftNode = sortedList[0];
-
-                        //Before we connect them all up, make sure the line between them doesnt intersect anything
-
-
-                        closestToLeftNode.ConnectedNodes.Add(leftNode);
-                        leftNode.ConnectedNodes.Add(closestToLeftNode);
-
-                        previousEdgeNode.ConnectedNodes.Add(closestToPrevEdge);
-                        closestToPrevEdge.ConnectedNodes.Add(previousEdgeNode);
                     }
                 }
 

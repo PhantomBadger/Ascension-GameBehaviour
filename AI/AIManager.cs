@@ -46,7 +46,7 @@ namespace AI
                 {
                     //Draw Waypoints
                     spriteBatch.Draw(waypointTex, new Rectangle((int)WaypointNetwork[i].Position.X - 3, (int)WaypointNetwork[i].Position.Y - 3, 6, 6), Color.White);
-                   /* spriteBatch.DrawString(debugFont,
+                    spriteBatch.DrawString(debugFont,
                         $"[{WaypointNetwork[i].G}, {WaypointNetwork[i].H}]",
                         new Vector2(WaypointNetwork[i].Position.X, WaypointNetwork[i].Position.Y - 15),
                         Color.Blue,
@@ -55,7 +55,7 @@ namespace AI
                         0.75f,
                         SpriteEffects.None,
                         0);
-                        */
+                        
                     //Draw Waypoint connectors
                     for (int j = 0; j < WaypointNetwork[i].ConnectedNodes.Count; j++)
                     {
@@ -69,7 +69,7 @@ namespace AI
                             lineAngle,
                             new Vector2(0, 0),
                             SpriteEffects.None,
-                            0);
+                            0.1f);
                     }
                 }
             }
@@ -80,8 +80,17 @@ namespace AI
         /// </summary>
         public WaypointNode GetNewGoalNode()
         {
-            //TODO
-            return null;
+            //Find the highest waypoint(s) and select one
+            if (WaypointNetwork != null && WaypointNetwork.Count > 0)
+            {
+                WaypointNetwork.Sort((n1, n2) => n1.Position.Y.CompareTo(n2.Position.Y));
+                Console.WriteLine($"New Goal Waypoint at ({WaypointNetwork[0].Position.X}, {WaypointNetwork[0].Position.Y})");
+                return WaypointNetwork[0];
+            }
+            else
+            {
+                return null;
+            }
         }
 
         /// <summary>
@@ -102,21 +111,14 @@ namespace AI
 
             //Add the start node to the open list
             openList.Add(startNode);
-
+            WaypointNode currentNode = startNode;
             while (openList.Count > 0)
             {
                 //Sort based on lowest heuristic
                 openList.Sort((n1, n2) => (n1.H + n1.G).CompareTo((n2.H + n2.G)));
 
-                //Check if we're at a dead end
-                if (openList.Count <= 0)
-                {
-                    //Go onto the next entry in the open list
-                    continue;
-                }
-
                 //Get the next node
-                WaypointNode currentNode = openList[0];
+                currentNode = openList[0];
                 closedList.Add(currentNode);
                 openList.RemoveAt(0);
 
@@ -126,7 +128,6 @@ namespace AI
                     //Break out of search and trace back
                     break;
                 }
-
 
                 //For each connected node
                 for (int i = 0; i < currentNode.ConnectedNodes.Count; i++)

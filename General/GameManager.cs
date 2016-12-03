@@ -25,6 +25,7 @@ namespace General
         AIManager ai;
         PlatformGenerator platformGenerator;
         Player player;
+        Enemy enemy;
         Camera camera;
         GameState currentGameState;
         Vector2 camPosOnDebug;
@@ -32,6 +33,8 @@ namespace General
         KeyboardState oldState;
         List<GameObject> gameObjects = new List<GameObject>();
         Platform[] previousPlatformRow;
+
+        TimeSpan updateStep;
 
         public GameManager()
         {
@@ -44,7 +47,8 @@ namespace General
 
             //Run at a fixed step at 60 FPS
             IsFixedTimeStep = true;
-            TargetElapsedTime = TimeSpan.FromMilliseconds((1.0f / 60.0f) * 1000);
+            updateStep = TimeSpan.FromMilliseconds((1.0f / 60.0f) * 1000);
+            TargetElapsedTime = updateStep;
 
             //Set screen size
             graphics.PreferredBackBufferHeight = 750;
@@ -71,7 +75,7 @@ namespace General
             camera.Position = new Vector2(0);
 
             //Create the Player Component
-            player = new Player(new RigidBody2D(new Vector2(0, 0),
+            player = new Player(new RigidBody2D(new Vector2(0),
                                                 new Vector2(0.3f, 0.3f),
                                                 new Vector3(0, 0, 0),
                                                 0.5f,
@@ -86,6 +90,23 @@ namespace General
             //Add to the collections
             physics.RigidBodies.Add(player);
             gameObjects.Add(player);
+
+            //Create Enemy Component
+            enemy = new Enemy(new RigidBody2D(new Vector2(0),
+                                              new Vector2(0.3f, 0.3f),
+                                              new Vector3(0, 0, 0),
+                                              0.5f,
+                                              false,
+                                              new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.0f, DynamicCoefficient = 0.0f },
+                                              0.0f),
+                                 75.0f,
+                                 7500.0f,
+                                 updateStep);
+            enemy.AI = ai;
+            enemy.BoxCollider = new Vector2(31.5f, 45);
+            enemy.Tag = "Enemy";
+            physics.RigidBodies.Add(enemy);
+            gameObjects.Add(enemy);
 
             //Create the Floor Object
             Platform ground = new Platform();
@@ -112,6 +133,12 @@ namespace General
             ai.WaypointNetwork.AddRange(new WaypointNode[] { leftGround, rightGround });
 
             previousPlatformRow = new Platform[] { ground };
+
+            //Set initial enemy & player positions
+            player.Position = leftGround.Position;
+            enemy.Position = new Vector2(rightGround.Position.X - enemy.BoxCollider.X, rightGround.Position.Y);
+            enemy.NextNode = rightGround;
+            enemy.PreviousNode = rightGround;
 
             //Create Background Object
             Background bg = new Background();

@@ -46,11 +46,26 @@ namespace AI
             float distance = dxy.Length();
             float h = distance;
 
-            //We want low frictions for more mobility
-            h += ConnectedPlatform.Friction.DynamicCoefficient;
+            //We want high frictions for more stability
+            h += (ConnectedPlatform.Friction.DynamicCoefficient * 750);
 
-            //And high bounciness for more mobility
-            h -= ConnectedPlatform.Bounciness;
+            //If we're on a higher platform
+            if (ParentNode.Position.Y < Position.Y)
+            {
+                //Add a bonus
+                h -= 25;
+            }
+            //If we have to jump between horizontal platforms
+            else if (ParentNode.ConnectedPlatform != ConnectedPlatform)
+            {
+                //Add a penalty
+                h += 25;
+            }
+            
+
+            //For now we ignore bounciness to simplify AI
+            //And low bounciness for more mobility
+            //h -= ConnectedPlatform.Bounciness;
 
             H = h;
         }
