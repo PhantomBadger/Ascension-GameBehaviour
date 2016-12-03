@@ -10,5 +10,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)AIManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Enemy.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)PlatformGenerator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)WaypointNode.cs" />
   </ItemGroup>
 </Project>

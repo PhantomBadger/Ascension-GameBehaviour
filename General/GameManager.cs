@@ -23,6 +23,7 @@ namespace General
         SpriteBatch spriteBatch;
         PhysicsManager physics;
         AIManager ai;
+        PlatformGenerator platformGenerator;
         Player player;
         Camera camera;
         GameState currentGameState;
@@ -30,6 +31,7 @@ namespace General
 
         KeyboardState oldState;
         List<GameObject> gameObjects = new List<GameObject>();
+        Platform[] previousPlatformRow;
 
         public GameManager()
         {
@@ -38,6 +40,7 @@ namespace General
             Content.RootDirectory = "Content";
             physics = new PhysicsManager();
             ai = new AIManager();
+            platformGenerator = new PlatformGenerator();
 
             //Run at a fixed step at 60 FPS
             IsFixedTimeStep = true;
@@ -58,7 +61,7 @@ namespace General
         protected override void Initialize()
         {
             //Init AI State
-            ai.Initialize();
+            platformGenerator.Initialize();
 
             oldState = Keyboard.GetState();
 
@@ -95,6 +98,21 @@ namespace General
             ground.Friction = new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.9f, DynamicCoefficient = 0.9f };
             ground.Bounciness = 0.0f;
 
+            WaypointNode leftGround = new WaypointNode();
+            leftGround.Position = new Vector2(ground.Position.X + PlatformGenerator.WaypointEdgeBuffer, ground.Position.Y - player.BoxCollider.Y);
+            leftGround.ConnectedPlatform = ground;
+
+            WaypointNode rightGround = new WaypointNode();
+            rightGround.Position = new Vector2(ground.Position.X + ground.Size.X - PlatformGenerator.WaypointEdgeBuffer, ground.Position.Y - player.BoxCollider.Y);
+            rightGround.ConnectedPlatform = ground;
+
+            leftGround.ConnectedNodes.Add(rightGround);
+            rightGround.ConnectedNodes.Add(leftGround);
+            ground.ConnectedWaypoints.AddRange(new WaypointNode[] { leftGround, rightGround });
+            ai.WaypointNetwork.AddRange(new WaypointNode[] { leftGround, rightGround });
+
+            previousPlatformRow = new Platform[] { ground };
+
             //Create Background Object
             Background bg = new Background();
             bg.SceneCamera = camera;
@@ -108,7 +126,12 @@ namespace General
             List<Platform> platforms = new List<Platform>();
             for (int i = (int)camera.Viewport.Y - InitPlatformDistance; i > 0 - YPlatformBuffer; i -= InitPlatformDistance)
             {
-                platforms.AddRange(ai.GeneratePlatforms(new Vector2(0, i), camera.Viewport.X));
+                Platform[] platformRow = platformGenerator.GeneratePlatforms(new Vector2(0, i), camera.Viewport.X);
+                platforms.AddRange(platformRow);
+
+                WaypointNode[] genPlatforms = platformGenerator.GenerateWaypoints(platformRow, previousPlatformRow, player.BoxCollider.Y);
+                previousPlatformRow = platformRow;
+                ai.WaypointNetwork.AddRange(genPlatforms);
             }
             for (int i = 0; i < platforms.Count; i++)
             {
@@ -136,6 +159,7 @@ namespace General
         {
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
+            ai.LoadContent(Content);
             for (int i = 0; i < gameObjects.Count; i++)
             {
                 gameObjects[i].LoadContent(Content);
@@ -193,14 +217,17 @@ namespace General
                     //If we destroyed some, repopulate some more at the top of the screen
                     if (respawnPlatforms)
                     {
-                        Platform[] platforms = ai.GeneratePlatforms(new Vector2(camera.Position.X, camera.Position.Y - YPlatformBuffer), camera.Viewport.X);
-                        for (int i = 0; i < platforms.Length; i++)
+                        Platform[] platformRow = platformGenerator.GeneratePlatforms(new Vector2(camera.Position.X, camera.Position.Y - YPlatformBuffer), camera.Viewport.X);
+                        for (int i = 0; i < platformRow.Length; i++)
                         {
-                            platforms[i].Initialize();
-                            platforms[i].LoadContent(Content);
-                            gameObjects.Add(platforms[i]);
-                            physics.RigidBodies.Add(platforms[i]);
+                            platformRow[i].Initialize();
+                            platformRow[i].LoadContent(Content);
+                            gameObjects.Add(platformRow[i]);
+                            physics.RigidBodies.Add(platformRow[i]);
                         }
+                        WaypointNode[] genPlatforms = platformGenerator.GenerateWaypoints(platformRow, previousPlatformRow, player.BoxCollider.Y);
+                        previousPlatformRow = platformRow;
+                        ai.WaypointNetwork.AddRange(genPlatforms);
                     }
                 }
             }
@@ -262,6 +289,7 @@ namespace General
                               null,
                               null,
                               camera.GetTranslationMatrix());
+            ai.DebugDraw(gameTime, spriteBatch, GraphicsDevice);
             for (int i = 0; i < gameObjects.Count; i++)
             {
                 gameObjects[i].Draw(gameTime, spriteBatch, GraphicsDevice);

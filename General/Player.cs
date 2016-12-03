@@ -26,22 +26,12 @@ namespace General
         /// </summary>
         /// <param name="newRigidBody">RigidBody component of the player</param>
         /// <param name="newSpeed">Player's default movement speed</param>
+        /// /// <param name="newJumpSpeed">Player's default jump speed</param>
         public Player(RigidBody2D newRigidBody, float newSpeed, float newJumpSpeed) : 
             base(newRigidBody.Position, newRigidBody.Scale, newRigidBody.Rotation, newRigidBody.Mass, newRigidBody.IsStatic, newRigidBody.Friction, newRigidBody.Bounciness)
         {
             PlayerSpeed = newSpeed;
             JumpSpeed = newJumpSpeed;
-            Tag = "Player";
-        }
-
-        /// <summary>
-        /// Default Constructor for Player Class with just required speed
-        /// </summary>
-        /// <param name="newSpeed">Speed for the player</param>
-        public Player(float newSpeed) : 
-            base ()
-        {
-            PlayerSpeed = newSpeed;
             Tag = "Player";
         }
 
@@ -126,7 +116,7 @@ namespace General
         public override void OnCollision(CollisionPair col)
         {
             RigidBody2D collidedObject = col.ObjectA == (RigidBody2D)this ? col.ObjectB : col.ObjectA;
-            if (collidedObject.Tag == "Ground" && collidedObject.Position.Y >= Position.Y)
+            if (collidedObject.Tag == "Ground" && collidedObject.Position.Y >= Position.Y && col.ContactNormal.Y != 0.0f)
             {
                 //If we're with the ground, set the variable onGround to true
                 //Also check if the collided object is below me

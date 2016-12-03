@@ -6,128 +6,184 @@ using Physics;
 using MonoGame.Utilities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Content;
+using System.Linq;
 
 namespace AI
 {
     class AIManager
     {
-        //Generation Parameters
-        private const int MaxPlatformNumbers = 5;
-        private const int MinPlatformNumbers = 1;
-        private const int MaxPlatformSpacePercentOfScreen = 30;
-        private const int GenerationPosYOffset = 0;
-        public const int PlatformYSize = 20;
+        public List<WaypointNode> WaypointNetwork { get; set; }
 
-        //Object Templates that are re-used when generating
-        //Friction and Bounciness
-        public struct PlatformComponents
+        private Texture2D waypointTex;
+        private SpriteFont debugFont;
+
+        private const int MaxSteps = 1000;
+
+        public AIManager()
         {
-            public RigidBody2D.FrictionCoefficients FrictionCoefficients { get; set; }
-            public float Bounciness { get; set; }
-            public string TextureLeft { get; set; }
-            public string TextureMid { get; set; }
-            public string TextureRight { get; set; }
+            WaypointNetwork = new List<WaypointNode>();
         }
-        private PlatformComponents[] platformPrefabs;
-        private Random rand;
-        private int prevNumOfPlatforms = -1;
 
-        /// <summary>
-        /// Populate the platform templates
-        /// </summary>
-        public void Initialize()
+        public void LoadContent(ContentManager content)
         {
-            platformPrefabs = new PlatformComponents[4];
-            rand = new Random();
-
-            //Create the Standard Platform Object Template
-            platformPrefabs[0] = new PlatformComponents() { FrictionCoefficients = new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.9f, DynamicCoefficient = 0.9f },
-                                                            Bounciness = 0.1f,
-                                                            TextureLeft = "grassLeft.png",
-                                                            TextureMid = "grassMid.png",
-                                                            TextureRight = "grassRight.png" };
-
-            //Create the Ice Platform Object Template
-            platformPrefabs[1] = new PlatformComponents() { FrictionCoefficients = new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.4f, DynamicCoefficient = 0.4f },
-                                                            Bounciness = 0.0f,
-                                                            TextureLeft = "snowLeft.png",
-                                                            TextureMid = "snowMid.png",
-                                                            TextureRight = "snowRight.png" };
-
-            //Create the Sticky Platform Object Template
-            platformPrefabs[2] = new PlatformComponents() { FrictionCoefficients = new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 1.5f, DynamicCoefficient = 1.5f },
-                                                            Bounciness = 0.0f,
-                                                            TextureLeft = "sandLeft.png",
-                                                            TextureMid = "sandMid.png",
-                                                            TextureRight = "sandRight.png" };
-
-            //Create the Bouncy Platform Object Template
-            platformPrefabs[3] = new PlatformComponents() { FrictionCoefficients = new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.9f, DynamicCoefficient = 0.9f },
-                                                            Bounciness = 0.8f,
-                                                            TextureLeft = "planetLeft.png",
-                                                            TextureMid = "planetMid.png",
-                                                            TextureRight = "planetRight.png"};
+            //Load Debug Font
+            debugFont = content.Load<SpriteFont>("DebugFont");
         }
-                
-        /// <summary>
-        /// Generates a series of platforms with varying frictions and bounciness
-        /// </summary>
-        /// <param name="pos">The X/Y Position to create the platforms at (top left)</param>
-        /// <param name="xWidth">The X width the platforms must be constrained in</param>
-        /// <returns>Array of generated platforms</returns>
-        public Platform[] GeneratePlatforms(Vector2 pos, float xWidth)
+
+        public void DebugDraw(GameTime gameTime, SpriteBatch spriteBatch, GraphicsDevice graphicsDevice)
         {
-            //Get our list of platforms to return
-            Platform[] platforms;
-
-            float positionY = pos.Y;
-            float screenWidth = xWidth;
-
-            //Pick a number of platforms, as long as it wasnt one we just had
-            int numOfPlatforms;
-            while ((numOfPlatforms = rand.Next(MinPlatformNumbers, MaxPlatformNumbers)) == prevNumOfPlatforms) { }
-            prevNumOfPlatforms = numOfPlatforms;
-            platforms = new Platform[numOfPlatforms];
-
-            //Get some size calculations
-            //Total free space we'll have on the row
-            float spaceSize = ((screenWidth / 100) * MaxPlatformSpacePercentOfScreen) / numOfPlatforms;
-            float platformSize = (screenWidth - (spaceSize * numOfPlatforms)) / numOfPlatforms;
-
-            for (int i = 0; i < numOfPlatforms; i++)
+            //Create waypoint texture
+            if (waypointTex == null)
             {
-                //Randomly decide what kind of platform to use
-                int platformType = rand.Next(0, platformPrefabs.Length);
-
-                platforms[i] = new Platform();
-                platforms[i].IsStatic = true;
-                platforms[i].Friction = platformPrefabs[platformType].FrictionCoefficients;
-                platforms[i].Bounciness = platformPrefabs[platformType].Bounciness;
-
-                //Set the Texture
-                platforms[i].TextureLeftFile = platformPrefabs[platformType].TextureLeft;
-                platforms[i].TextureMidFile = platformPrefabs[platformType].TextureMid;
-                platforms[i].TextureRightFile = platformPrefabs[platformType].TextureRight;
-
-                //Calculate the size and positions of each platform
-                platforms[i].Size = new Vector2(platformSize, PlatformYSize);
-                platforms[i].BoxCollider = new Vector2(platformSize, PlatformYSize);
-
-                //Automatically space out the platforms depending on how many there are
-                    //The size of the platform, plus the size needed for a space,
-                    //Then add a bit of etxra padding so it ends at the edge of the screen
-                    //And if its only 1 platform, we add some extra space at the start so its centered
-                platforms[i].Position = new Vector2(pos.X + ((i * (platformSize + spaceSize + 
-                                                         (spaceSize / (numOfPlatforms > 1 ? numOfPlatforms - 1 : 1)))) + 
-                                                    (numOfPlatforms == 1 ? spaceSize / 2 : 0)),
-                                                    positionY);
-
-                //Set the Scale
-                platforms[i].Scale = new Vector2(0.2f, 0.2f);
+                waypointTex = new Texture2D(graphicsDevice, 1, 1);
+                waypointTex.SetData(new Color[] { Color.SkyBlue });
             }
 
-            //Return these generated platforms
-            return platforms;
+            if (GameManager.DebugMode)
+            {
+                for (int i = 0; i < WaypointNetwork.Count; i++)
+                {
+                    //Draw Waypoints
+                    spriteBatch.Draw(waypointTex, new Rectangle((int)WaypointNetwork[i].Position.X - 3, (int)WaypointNetwork[i].Position.Y - 3, 6, 6), Color.White);
+                   /* spriteBatch.DrawString(debugFont,
+                        $"[{WaypointNetwork[i].G}, {WaypointNetwork[i].H}]",
+                        new Vector2(WaypointNetwork[i].Position.X, WaypointNetwork[i].Position.Y - 15),
+                        Color.Blue,
+                        0,
+                        Vector2.Zero,
+                        0.75f,
+                        SpriteEffects.None,
+                        0);
+                        */
+                    //Draw Waypoint connectors
+                    for (int j = 0; j < WaypointNetwork[i].ConnectedNodes.Count; j++)
+                    {
+                        Vector2 waypointLine = WaypointNetwork[i].ConnectedNodes[j].Position - WaypointNetwork[i].Position;
+                        float lineAngle = (float)Math.Atan2(waypointLine.Y, waypointLine.X);
+
+                        spriteBatch.Draw(waypointTex,
+                            new Rectangle((int)WaypointNetwork[i].Position.X, (int)WaypointNetwork[i].Position.Y, (int)waypointLine.Length(), 1),
+                            null,
+                            Color.White,
+                            lineAngle,
+                            new Vector2(0, 0),
+                            SpriteEffects.None,
+                            0);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Selects the highest node to be the new Goal node from the Waypoint network
+        /// </summary>
+        public WaypointNode GetNewGoalNode()
+        {
+            //TODO
+            return null;
+        }
+
+        /// <summary>
+        /// Uses A* to compute the shortest path from the start node to the goal node
+        /// </summary>
+        /// <returns>An ordered list of the path taken to reach the goal node</returns>
+        public Queue<WaypointNode> AStarSearch(WaypointNode startNode, WaypointNode endNode)
+        {
+            List<WaypointNode> openList = new List<WaypointNode>();
+            List<WaypointNode> closedList = new List<WaypointNode>();
+
+            //Make sure we have a goal
+            if (endNode == null)
+            {
+                //Error - No Goal
+                return null;
+            }
+
+            //Add the start node to the open list
+            openList.Add(startNode);
+
+            while (openList.Count > 0)
+            {
+                //Sort based on lowest heuristic
+                openList.Sort((n1, n2) => (n1.H + n1.G).CompareTo((n2.H + n2.G)));
+
+                //Check if we're at a dead end
+                if (openList.Count <= 0)
+                {
+                    //Go onto the next entry in the open list
+                    continue;
+                }
+
+                //Get the next node
+                WaypointNode currentNode = openList[0];
+                closedList.Add(currentNode);
+                openList.RemoveAt(0);
+
+                //Check if we're at the goal node
+                if (currentNode == endNode)
+                {
+                    //Break out of search and trace back
+                    break;
+                }
+
+
+                //For each connected node
+                for (int i = 0; i < currentNode.ConnectedNodes.Count; i++)
+                {
+                    //If it's on the closed list
+                    if (closedList.Contains(currentNode.ConnectedNodes[i]))
+                    {
+                        //Ignore it
+                        continue;
+                    }
+                    //If it's already in the open list, check to see if it's a better path
+                    //and reassign the parent node
+                    //If not, add it and assign parent node
+                    else if (openList.Contains(currentNode.ConnectedNodes[i]))
+                    {
+                        float curF = currentNode.ConnectedNodes[i].ParentNode.G + currentNode.ConnectedNodes[i].ParentNode.H;
+                        //If our F is less than it's current F, then we swap the parents over
+                        if (currentNode.G + currentNode.H < curF)
+                        {
+                            int index = openList.FindIndex((n1) => n1 == currentNode.ConnectedNodes[i]);
+                            openList[index].ParentNode = currentNode;
+                            openList[index].CalculateG();
+                        }
+                        //Otherwise we ignore it
+                    }
+                    else
+                    {
+                        //Calculate Heuristics and add to open list
+                        currentNode.ConnectedNodes[i].ParentNode = currentNode;
+                        currentNode.ConnectedNodes[i].CalculateG();
+                        currentNode.ConnectedNodes[i].CalculateH(endNode.Position);
+
+                        openList.Add(currentNode.ConnectedNodes[i]);
+                    }
+                }       
+            }
+
+            //If we found the end node
+            if (endNode.ParentNode != null)
+            {
+                Queue<WaypointNode> path = new Queue<WaypointNode>();
+                //Trace back through the end node to the start node
+                WaypointNode pathNode = endNode;
+                while (pathNode != startNode)
+                {
+                    path.Enqueue(pathNode);
+                    pathNode = pathNode.ParentNode;
+                }
+                //Reverse path & return
+                path = new Queue<WaypointNode>(path.Reverse());
+                return path;
+            }
+            else
+            {
+                //Couldnt find a path
+                return null;
+            }
         }
     }
 }

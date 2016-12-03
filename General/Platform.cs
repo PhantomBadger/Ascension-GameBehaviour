@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Physics;
+using AI;
 
 namespace General
 {
@@ -16,6 +17,7 @@ namespace General
         public string TextureLeftFile { get; set; } = "stoneLeft.png";
         public string TextureMidFile { get; set; } = "stoneMid.png";
         public string TextureRightFile { get; set; } = "stoneRight.png";
+        public List<WaypointNode> ConnectedWaypoints;
 
         private Texture2D textureLeft;
         private Texture2D textureMid;
@@ -23,6 +25,7 @@ namespace General
 
         public Platform()
         {
+            ConnectedWaypoints = new List<WaypointNode>();
             Size = new Vector2();
             Scale = new Vector2(1, 1);
             Friction = new FrictionCoefficients() { StaticCoefficient = 0.0f, DynamicCoefficient = 0.0f };

@@ -37,7 +37,7 @@ namespace Physics
                     }
 
                     CollisionPair colPair;
-                    if (TestAABBAABB(RigidBodies[i], RigidBodies[j], out colPair))
+                    if (TestAABBAABB_C(RigidBodies[i], RigidBodies[j], out colPair))
                     {
                         if (collisionsToResolve.FindIndex(f => (f.ObjectA == colPair.ObjectA && f.ObjectB == colPair.ObjectB) || (f.ObjectB == colPair.ObjectA && f.ObjectA == colPair.ObjectB)) < 0)
                         {
@@ -57,7 +57,14 @@ namespace Physics
             }
         }
 
-        private bool TestAABBAABB(RigidBody2D objectA, RigidBody2D objectB, out CollisionPair colPair)
+        /// <summary>
+        /// AABB AABB Intersection Test, Does populate Collision Pair, used Internally
+        /// </summary>
+        /// <param name="objectA">AABB Object A</param>
+        /// <param name="objectB">AABB Object B</param>
+        /// <param name="colPair">Out Collision Pair Data</param>
+        /// <returns>Boolean True or False</returns>
+        private bool TestAABBAABB_C(RigidBody2D objectA, RigidBody2D objectB, out CollisionPair colPair)
         {
             colPair = new CollisionPair();
 
@@ -110,6 +117,10 @@ namespace Physics
             return false;
         }
 
+        /// <summary>
+        /// Resolve the AABB Collision detailed in the Collision Pair Data
+        /// </summary>
+        /// <param name="colPair">Collision Information</param>
         private void ResolveAABBAABB(CollisionPair colPair)
         {
             //Get relative velocity of objects
@@ -165,6 +176,33 @@ namespace Physics
             //Object B
             colPair.ObjectB.ActiveDynamic += (-(colPair.ObjectA.Friction.DynamicCoefficient) * (colPair.ObjectB.Velocity));
             colPair.ObjectB.ActiveStatic += (-(colPair.ObjectA.Friction.StaticCoefficient) * (new Vector2(colPair.ContactNormal.Y, -colPair.ContactNormal.X)));
+        }
+
+        /// <summary>
+        /// AABB Segment Intersection Test, Does not populate Collision Pair
+        /// </summary>
+        /// <param name="objectA">AABB Object</param>
+        /// <param name="segment">Line Segment</param>
+        /// <returns>Boolean true or false</returns>
+        public bool TestAABBSegment(RigidBody2D objectA, Vector2 segmentStart, Vector2 segmentEnd)
+        {
+            //TODO!!!!!!!
+
+        }
+
+        /// <summary>
+        /// AABB AABB Intersection Test, Does not populate Collision Pair
+        /// </summary>
+        /// <param name="objectA">AABB Object A</param>
+        /// <param name="objectB">AABB Object B</param>
+        /// <returns>Boolean true or false</returns>
+        public bool TestAABBAABB(RigidBody2D objectA, RigidBody2D objectB)
+        {
+            //AABB Collision Detection
+            return (objectA.Position.X + objectA.BoxCollider.X > objectB.Position.X &&
+                objectA.Position.X < objectB.Position.X + objectB.BoxCollider.X &&
+                objectA.Position.Y + objectA.BoxCollider.Y > objectB.Position.Y &&
+                objectA.Position.Y < objectB.Position.Y + objectB.BoxCollider.Y);
         }
     }
 }
