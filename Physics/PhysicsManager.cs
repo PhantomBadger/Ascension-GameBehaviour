@@ -31,7 +31,7 @@ namespace Physics
                 for (int j = 0; j < RigidBodies.Count; j++)
                 {
                     //Prevent it colliding with itself
-                    if (i == j)
+                    if (i == j || RigidBodies[i].Tag == RigidBodies[j].Tag)
                     {
                         continue;
                     }

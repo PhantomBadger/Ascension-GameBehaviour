@@ -14,22 +14,25 @@ namespace AI
     class Enemy : RigidBody2D
     {
         public enum EnemyState { TravellingToNode, SelectingNode, AtGoal }
+        public enum TravellingToNodeState { SamePlatform, DifferentPlatformHorizontal, DifferentPlatformVertical, Lost }
 
         public float EnemySpeed { get; set; }
         public float JumpSpeed { get; set; }
         public AIManager AI { get; set; }
         public EnemyState CurrentState { get; set; }
+        public TravellingToNodeState CurrentMovingState { get; set; }
         public WaypointNode PreviousNode { get; set; }
         public WaypointNode NextNode { get; set; }
 
         private Texture2D enemyTexture;
         private Texture2D waypointTex;
+        private SpriteFont debugFont;
         private bool onGround = false;
         private Queue<WaypointNode> currentPath;
         private Platform currentPlatform;
         private TimeSpan gameUpdateStep;
 
-        private const float MinDistance = 0.5f;
+        private const float MinDistance = 0.05f;
         private const float MinJumpHeightTrigger = 15.0f;
 
         /// <summary>
@@ -56,6 +59,7 @@ namespace AI
         /// <param name="content">Content Manager</param>
         public override void LoadContent(ContentManager content)
         {
+            debugFont = content.Load<SpriteFont>("DebugFont");
             enemyTexture = content.Load<Texture2D>("alienPink_front.png");
             base.LoadContent(content);
         }
@@ -108,6 +112,7 @@ namespace AI
                         if (currentPath != null && currentPath.Count > 0)
                         {
                             NextNode = currentPath.Dequeue();
+                            CurrentMovingState = SelectTravellingState(PreviousNode, NextNode);
                             CurrentState = EnemyState.TravellingToNode;
                         }
                         else
@@ -126,6 +131,7 @@ namespace AI
                         Rectangle tempRec = new Rectangle(Position.ToPoint(), BoxCollider.ToPoint());
                         if (tempRec.Contains(NextNode.Position) && onGround)
                         {
+                            //Console.WriteLine("AT GOAL");
                             //If we have items left in the queue go to selecting node, if not we're at goal
                             CurrentState = currentPath.Count > 0 ? EnemyState.SelectingNode : EnemyState.AtGoal;
                         }
@@ -145,69 +151,146 @@ namespace AI
             base.Update(gameTime);
         }
 
-        private void MoveTowards(WaypointNode targetNode)
+        private TravellingToNodeState SelectTravellingState(WaypointNode currentNode, WaypointNode nextNode)
         {
-            //Determine if the next node is on a different platform than the one we're on
-            //Or will it require jumping between platforms
-            Vector2 deltaXY = targetNode.Position - (new Vector2(Position.X + (BoxCollider.X / 2), Position.Y));
-            Vector2 nodeDeltaXY = targetNode.Position - PreviousNode.Position;
-
-            //Are we on the same platform as our current target node
-            if (onGround && targetNode.ConnectedPlatform == currentPlatform)
+            if (currentNode.ConnectedPlatform == nextNode.ConnectedPlatform)
             {
-                //Estimate a 'slow-down' location, where we hold the opposite direction to reduce velocity
-                double numOfFramesToSlowdown = ((Math.Abs(Velocity.X) + EnemySpeed) * gameUpdateStep.TotalSeconds) / (EnemySpeed * (1/Mass));
-                double distanceFromEndToSlowdown = numOfFramesToSlowdown * Math.Abs(Velocity.X);
-                distanceFromEndToSlowdown /= (currentPlatform.Friction.DynamicCoefficient);
-                distanceFromEndToSlowdown *= 10;
-
-                Console.WriteLine($"slowdownDist {distanceFromEndToSlowdown}, curDist {deltaXY.X}");
-
-                //If we're within that distance
-                if (Math.Abs(deltaXY.X) < distanceFromEndToSlowdown)
-                {
-                    Console.WriteLine("Slowing Down");
-                    //Move in Opposite direction for num of frames
-                    if (deltaXY.X < 0)
-                    {
-                        MoveRight();
-                    }
-                    else
-                    {
-                        MoveLeft();
-                    }
-                }
-                else
-                {
-                    //Move in direction
-                    if (deltaXY.X < 0)
-                    {
-                        MoveLeft();
-                    }
-                    else
-                    {
-                        MoveRight();
-                    }
-                }
+                return TravellingToNodeState.SamePlatform;
+            }
+            else if (Math.Abs(nextNode.Position.Y - currentNode.Position.Y) > MinDistance)
+            {
+                return TravellingToNodeState.DifferentPlatformVertical;
             }
             else
             {
-                //Move Vertically if it's above us or on a different platform
-                if ((Math.Abs(deltaXY.Y) > MinJumpHeightTrigger) ||
-                    (Math.Abs(deltaXY.X) > MinDistance && NextNode.ConnectedPlatform != PreviousNode.ConnectedPlatform))
-                {
-                    Jump();
-                }
+                return TravellingToNodeState.DifferentPlatformHorizontal;
+            }
+        }
 
-                //If we're at a different X value to it, move in the right direction
-                if (deltaXY.X >= MinDistance)
-                {
-                    MoveRight();
-                }
-                else if (deltaXY.X <= -MinDistance)
-                {
-                    MoveLeft();
-                }
+        private void MoveTowards(WaypointNode targetNode)
+        {
+            //Get distance data
+            Vector2 deltaXY = targetNode.Position - (new Vector2(Position.X + (BoxCollider.X / 2), Position.Y));
+            Vector2 nodeDeltaXY = targetNode.Position - PreviousNode.Position;
+
+            switch (CurrentMovingState)
+            {
+                case TravellingToNodeState.SamePlatform:
+                    {
+                        //Move in a straight line towards the target node, slowing down when near it
+                        double oppAcc = CalculateAcceleration(new Vector2(-Force.X, Force.Y)).X;
+                        double timeToSlowdown = -Velocity.X / oppAcc;
+                        double distanceRequired = Math.Abs(Velocity.X * timeToSlowdown);
+
+                        //Console.WriteLine($"slowdownDist {distanceRequired}, curDist {deltaXY.X}");
+
+                        //If we're within that distance
+                        if (Math.Abs(deltaXY.X) < distanceRequired)
+                        {
+                            //Console.WriteLine("Slowing Down");
+                            //Slowdown to a 0 vel
+                            SlowdownHorizontal(deltaXY.X);
+                        }
+                        else
+                        {
+                            //Move in direction
+                            MoveHorizontal(deltaXY.X);
+                        }
+
+                        //Check if we're lost
+                        if (currentPlatform != targetNode.ConnectedPlatform)
+                        {
+                            CurrentMovingState = TravellingToNodeState.Lost;
+                        }
+                        break;
+                    }
+
+                case TravellingToNodeState.DifferentPlatformHorizontal:
+                    {
+                        //If we're below the target node, then we've fallen and are lost
+                        if (currentPlatform.Position.Y < targetNode.ConnectedPlatform.Position.Y)
+                        {
+                            CurrentMovingState = TravellingToNodeState.Lost;
+                            break;
+                        }
+
+                        //Jump so we're in the air
+                        Jump();
+
+                        //Move in direction
+                        MoveHorizontal(deltaXY.X);
+                        break;
+                    }
+                case TravellingToNodeState.DifferentPlatformVertical:
+                    {
+                        //If we've landed on the same platform as the node, switch to same platform
+                        if (currentPlatform == targetNode.ConnectedPlatform)
+                        {
+                            WaypointNode tempNode = new WaypointNode(Position);
+                            PreviousNode = tempNode;
+                            CurrentMovingState = TravellingToNodeState.SamePlatform;
+                            break;
+                        }
+
+                        //Jump so we're in the air
+                        Jump();
+
+                        //Once we're near the target Y, then move across the X
+                        if (deltaXY.Y > -MinDistance)
+                        {
+                            //Move in direction
+                            MoveHorizontal(deltaXY.X);
+                        }
+                        else
+                        {
+                            //TODO:
+                            //Correct velocity to 0
+                            SlowdownHorizontal(deltaXY.X);
+                        }
+                        break;
+                    }
+                case TravellingToNodeState.Lost:
+                    {
+                        //We're not where we should be...
+                        //Find a new path
+                       // Console.WriteLine("LOST");
+                        CurrentState = EnemyState.AtGoal;
+                        break;
+                    }
+            }
+        }
+
+        private void SlowdownHorizontal(float dx)
+        {
+            //Move in Opposite direction for num of frames
+            if ((Velocity.X < 0 && dx < 0) || (Velocity.X >= 0 && dx >= 0))
+            {
+                //We're moving in the direction of the target, 
+                //slow down with opposite delta x
+                MoveHorizontal(-dx);
+            }
+            else if ((Velocity.X < 0 && dx >= 0) || (Velocity.X >= 0 && dx < 0))
+            {
+                //We're moving away from the target
+                //Slow down with normal delta x
+                MoveHorizontal(dx);
+            }
+        }
+
+        /// <summary>
+        /// Utility method for moving in a horizontal dir
+        /// </summary>
+        /// <param name="dx">The x distance</param>
+        private void MoveHorizontal(float dx)
+        {
+            //Move in direction
+            if (dx < 0)
+            {
+                MoveLeft();
+            }
+            else
+            {
+                MoveRight();
             }
         }
 
@@ -260,6 +343,8 @@ namespace AI
 
             if (GameManager.DebugMode && currentPath != null && currentPath.Count > 0)
             {
+                spriteBatch.DrawString(debugFont, CurrentMovingState.ToString(), new Vector2(Position.X, Position.Y - 25), Color.Red);
+
                 //Draw his planned path in red
                 WaypointNode prevNode = NextNode;
                 spriteBatch.Draw(waypointTex, new Rectangle((int)prevNode.Position.X - 3, (int)prevNode.Position.Y - 3, 6, 6), Color.Yellow);

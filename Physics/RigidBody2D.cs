@@ -102,29 +102,7 @@ namespace Physics
         /// <param name="gameTime"></param>
         public override void Update(GameTime gameTime)
         {
-            //Apply the Friction to the current Force
-            if (Velocity.X == 0)
-            {
-                //Static Friction
-                Force += ActiveStatic;
-            }
-            else
-            {
-                //Dynamic Friction
-                Force += ActiveDynamic;
-            }
-
-            //Calculate acceleration using F/m
-            if (!IsIgnoringGravity)
-            {
-                //If we're not ignoring gravity, apply it as a constant force
-                Acceleration = (Force + GameManager.Gravity) * (1 / Mass);
-            }
-            else
-            {
-                //If we are, ignore it
-                Acceleration = Force * (1 / Mass);
-            }
+            Acceleration = CalculateAcceleration(Force);
 
             if (!IsStatic)
             {
@@ -226,6 +204,33 @@ namespace Physics
         public virtual void OnCollision(CollisionPair col)
         {
             //Do Nothing
+        }
+
+        protected Vector2 CalculateAcceleration(Vector2 Force)
+        {
+            //Apply the Friction to the current Force
+            if (Velocity.X == 0)
+            {
+                //Static Friction
+                Force += ActiveStatic;
+            }
+            else
+            {
+                //Dynamic Friction
+                Force += ActiveDynamic;
+            }
+
+            //Calculate acceleration using F/m
+            if (!IsIgnoringGravity)
+            {
+                //If we're not ignoring gravity, apply it as a constant force
+                return (Force + GameManager.Gravity) * (1 / Mass);
+            }
+            else
+            {
+                //If we are, ignore it
+                return Force * (1 / Mass);
+            }
         }
 
     }

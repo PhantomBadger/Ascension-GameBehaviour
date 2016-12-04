@@ -72,7 +72,7 @@ namespace General
             ControllerHandler();
             onGround = false;
 
-            //Console.WriteLine($"Position {Transform.X}, {Transform.Y}");
+            Console.WriteLine($"Position {Position.X}, {Position.Y}");
 
             //Call RigidBody Update
             base.Update(gameTime);

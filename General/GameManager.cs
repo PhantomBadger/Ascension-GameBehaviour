@@ -98,13 +98,13 @@ namespace General
                                               0.5f,
                                               false,
                                               new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.0f, DynamicCoefficient = 0.0f },
-                                              0.0f),
+                                              0.8f),
                                  75.0f,
                                  7500.0f,
                                  updateStep);
             enemy.AI = ai;
             enemy.BoxCollider = new Vector2(31.5f, 45);
-            enemy.Tag = "Enemy";
+            enemy.Tag = "Player";
             physics.RigidBodies.Add(enemy);
             gameObjects.Add(enemy);
 
@@ -116,7 +116,7 @@ namespace General
             ground.Scale = new Vector2(0.2f, 0.2f);
             ground.Size = new Vector2(camera.Viewport.X, 20);
             ground.BoxCollider = new Vector2(camera.Viewport.X, 20);
-            ground.Friction = new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.9f, DynamicCoefficient = 0.9f };
+            ground.Friction = new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.4f, DynamicCoefficient = 0.4f };
             ground.Bounciness = 0.0f;
 
             WaypointNode leftGround = new WaypointNode();
