@@ -47,25 +47,11 @@ namespace AI
             float h = distance;
 
             //We want high frictions for more stability
-            h += (ConnectedPlatform.Friction.DynamicCoefficient * 750);
-
-            //If we're on a higher platform
-            if (ParentNode.Position.Y < Position.Y)
-            {
-                //Add a bonus
-                h -= 25;
-            }
-            //If we have to jump between horizontal platforms
-            else if (ParentNode.ConnectedPlatform != ConnectedPlatform)
-            {
-                //Add a penalty
-                h += 25;
-            }
-            
-
+            h -= (ConnectedPlatform.Friction.DynamicCoefficient * 250);
+          
             //For now we ignore bounciness to simplify AI
-            //And low bounciness for more mobility
-            //h -= ConnectedPlatform.Bounciness;
+            //And low bounciness for more stability
+            h += (ConnectedPlatform.Bounciness * 100);
 
             H = h;
         }

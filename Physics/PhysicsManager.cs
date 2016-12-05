@@ -145,8 +145,8 @@ namespace Physics
 
             float objAVelAcrossNormal = Vector2.Dot(colPair.ObjectA.Velocity, colPair.ContactNormal);
             float objBVelAcrossNormal = Vector2.Dot(colPair.ObjectB.Velocity, colPair.ContactNormal);
-            float objAResolutionWeighting = (objAVelAcrossNormal + objBVelAcrossNormal) / objAVelAcrossNormal;
-            float objBResolutionWeighting = (objAVelAcrossNormal + objBVelAcrossNormal) / objBVelAcrossNormal;
+            float objAResolutionWeighting = 1;//(objAVelAcrossNormal + objBVelAcrossNormal) / objAVelAcrossNormal;
+            float objBResolutionWeighting = 1;//(objAVelAcrossNormal + objBVelAcrossNormal) / objBVelAcrossNormal;
 
             //Resolve the collision with a new velocity and position if they're not static
             if (!colPair.ObjectA.IsStatic)

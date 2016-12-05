@@ -372,6 +372,10 @@ namespace AI
             base.Draw(gameTime, spriteBatch, graphicsDevice);
         }
 
+        /// <summary>
+        /// On Collision Trigger Event
+        /// </summary>
+        /// <param name="col">Collision Data</param>
         public override void OnCollision(CollisionPair col)
         {
             RigidBody2D collidedObject = col.ObjectA == (RigidBody2D)this ? col.ObjectB : col.ObjectA;

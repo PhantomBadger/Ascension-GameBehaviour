@@ -99,7 +99,7 @@ namespace General
                                               false,
                                               new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.0f, DynamicCoefficient = 0.0f },
                                               0.8f),
-                                 75.0f,
+                                 100.0f,
                                  7500.0f,
                                  updateStep);
             enemy.AI = ai;
@@ -116,7 +116,7 @@ namespace General
             ground.Scale = new Vector2(0.2f, 0.2f);
             ground.Size = new Vector2(camera.Viewport.X, 20);
             ground.BoxCollider = new Vector2(camera.Viewport.X, 20);
-            ground.Friction = new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.4f, DynamicCoefficient = 0.4f };
+            ground.Friction = new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.7f, DynamicCoefficient = 0.7f };
             ground.Bounciness = 0.0f;
 
             WaypointNode leftGround = new WaypointNode();

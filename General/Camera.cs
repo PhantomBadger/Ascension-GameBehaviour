@@ -20,7 +20,7 @@ namespace General
 
         private const float MaxMoveRate = 2.5f;
         private const float RateStep = 0.5f;
-        private const float IncreaseRate = 2.5f;
+        private const float IncreaseRate = 7.5f;
 
         /// <summary>
         /// Get the middle of the screen
