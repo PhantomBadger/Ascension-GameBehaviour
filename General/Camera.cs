@@ -19,7 +19,7 @@ namespace General
         private float increaseCounter = 0.0f;
 
         private const float MaxMoveRate = 2.5f;
-        private const float RateStep = 0.5f;
+        private const float RateStep = 0.1f;
         private const float IncreaseRate = 7.5f;
 
         /// <summary>

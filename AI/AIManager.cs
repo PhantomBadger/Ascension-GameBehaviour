@@ -18,8 +18,6 @@ namespace AI
         private Texture2D waypointTex;
         private SpriteFont debugFont;
 
-        private const int MaxSteps = 1000;
-
         public AIManager()
         {
             WaypointNetwork = new List<WaypointNode>();

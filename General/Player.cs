@@ -116,7 +116,7 @@ namespace General
         public override void OnCollision(CollisionPair col)
         {
             RigidBody2D collidedObject = col.ObjectA == (RigidBody2D)this ? col.ObjectB : col.ObjectA;
-            if (collidedObject.Tag == "Ground" && collidedObject.Position.Y >= Position.Y && col.ContactNormal.Y != 0.0f)
+            if (col.ContactNormal.Y == 1)
             {
                 //If we're with the ground, set the variable onGround to true
                 //Also check if the collided object is below me

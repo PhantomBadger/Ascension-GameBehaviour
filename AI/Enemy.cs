@@ -31,9 +31,10 @@ namespace AI
         private Queue<WaypointNode> currentPath;
         private Platform currentPlatform;
         private TimeSpan gameUpdateStep;
+        private bool hasJumped = false;
 
         private const float MinDistance = 0.05f;
-        private const float MinJumpHeightTrigger = 15.0f;
+        private const float MinNodeDistance = 1f;
 
         /// <summary>
         /// Constructor for the Enemy Class with full info
@@ -101,8 +102,6 @@ namespace AI
                         }
                         CurrentState = EnemyState.SelectingNode;
 
-                        //This is a good use of goto I swear! (http://stackoverflow.com/a/174223/4203525)
-                        //goto case EnemyState.SelectingNode;
                         break;
                     }
                 case EnemyState.SelectingNode:
@@ -120,7 +119,6 @@ namespace AI
                             CurrentState = EnemyState.AtGoal;
                         }
 
-                        //goto case EnemyState.TravellingToNode;
                         break;
                     }
                 case EnemyState.TravellingToNode:
@@ -128,7 +126,7 @@ namespace AI
                         //Travel to the next node
                         Vector2 dxy = NextNode.Position - Position;
                         //Console.WriteLine($"Next Node: ({NextNode.Position.X}, {NextNode.Position.Y}) CurrentPos ({Position.X}, {Position.Y})");
-                        Rectangle tempRec = new Rectangle(Position.ToPoint(), BoxCollider.ToPoint());
+                        Rectangle tempRec = new Rectangle(Position.ToPoint() + new Point((int)BoxCollider.X / 4, 0), (BoxCollider / 2).ToPoint());
                         if (tempRec.Contains(NextNode.Position) && onGround)
                         {
                             //Console.WriteLine("AT GOAL");
@@ -153,6 +151,9 @@ namespace AI
 
         private TravellingToNodeState SelectTravellingState(WaypointNode currentNode, WaypointNode nextNode)
         {
+            //Reset jumped flag
+            hasJumped = false;
+
             if (currentNode.ConnectedPlatform == nextNode.ConnectedPlatform)
             {
                 return TravellingToNodeState.SamePlatform;
@@ -208,9 +209,18 @@ namespace AI
                 case TravellingToNodeState.DifferentPlatformHorizontal:
                     {
                         //If we're below the target node, then we've fallen and are lost
-                        if (currentPlatform.Position.Y < targetNode.ConnectedPlatform.Position.Y)
+                        if ((currentPlatform.Position.Y < targetNode.ConnectedPlatform.Position.Y) ||
+                            (hasJumped && onGround && currentPlatform != targetNode.ConnectedPlatform))
                         {
                             CurrentMovingState = TravellingToNodeState.Lost;
+                            break;
+                        }
+                        else if (hasJumped && onGround && currentPlatform == targetNode.ConnectedPlatform)
+                        {
+                            //Change to Same-Platform traversal
+                            WaypointNode tempNode = new WaypointNode(Position);
+                            PreviousNode = tempNode;
+                            CurrentMovingState = TravellingToNodeState.SamePlatform;
                             break;
                         }
 
@@ -231,8 +241,15 @@ namespace AI
                             CurrentMovingState = TravellingToNodeState.SamePlatform;
                             break;
                         }
+                        else if (currentPlatform != targetNode.ConnectedPlatform &&
+                                 currentPlatform != PreviousNode.ConnectedPlatform)
+                        {
+                            //Lost
+                            CurrentMovingState = TravellingToNodeState.Lost;
+                            break;
+                        }
 
-                        //Jump so we're in the air
+                        //Jump to get airborne
                         Jump();
 
                         //Once we're near the target Y, then move across the X
@@ -243,7 +260,6 @@ namespace AI
                         }
                         else
                         {
-                            //TODO:
                             //Correct velocity to 0
                             SlowdownHorizontal(deltaXY.X);
                         }
@@ -322,6 +338,7 @@ namespace AI
             {
                 Force = new Vector2(Force.X, -JumpSpeed);
                 onGround = false;
+                hasJumped = true;
             }
         }
 

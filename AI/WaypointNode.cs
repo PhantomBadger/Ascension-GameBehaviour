@@ -46,7 +46,7 @@ namespace AI
             float distance = dxy.Length();
             float h = distance;
 
-            //We want high frictions for more stability
+            //We want high frictions for more mobility
             h -= (ConnectedPlatform.Friction.DynamicCoefficient * 250);
           
             //For now we ignore bounciness to simplify AI
