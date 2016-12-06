@@ -28,7 +28,7 @@ namespace General
         /// <param name="newSpeed">Player's default movement speed</param>
         /// /// <param name="newJumpSpeed">Player's default jump speed</param>
         public Player(RigidBody2D newRigidBody, float newSpeed, float newJumpSpeed) : 
-            base(newRigidBody.Position, newRigidBody.Scale, newRigidBody.Rotation, newRigidBody.Mass, newRigidBody.IsStatic, newRigidBody.Friction, newRigidBody.Bounciness)
+            base(newRigidBody.Position, newRigidBody.Scale, newRigidBody.Rotation, newRigidBody.Mass, newRigidBody.IsStaticHorizontal, newRigidBody.Friction, newRigidBody.Bounciness)
         {
             PlayerSpeed = newSpeed;
             JumpSpeed = newJumpSpeed;
@@ -72,7 +72,7 @@ namespace General
             ControllerHandler();
             onGround = false;
 
-            Console.WriteLine($"Position {Position.X}, {Position.Y}");
+            //Console.WriteLine($"Position {Position.X}, {Position.Y}");
 
             //Call RigidBody Update
             base.Update(gameTime);

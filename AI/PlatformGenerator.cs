@@ -115,7 +115,7 @@ namespace AI
                 int platformType = rand.Next(0, platformPrefabs.Length);
 
                 platforms[i] = new Platform();
-                platforms[i].IsStatic = true;
+                platforms[i].IsStaticHorizontal = true;
                 platforms[i].Friction = platformPrefabs[platformType].FrictionCoefficients;
                 platforms[i].Bounciness = platformPrefabs[platformType].Bounciness;
 

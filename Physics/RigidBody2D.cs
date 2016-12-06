@@ -21,7 +21,8 @@ namespace Physics
         public Vector2 Force { get; set; }
         public Vector2 BoxCollider { get; set; }
         public float Mass { get; set; }
-        public bool IsStatic { get; set; }
+        public bool IsStaticHorizontal { get; set; }
+        public bool IsStaticVertical { get; set; }
         public bool IsIgnoringGravity { get; set; }
         public FrictionCoefficients Friction { get; set; }
         public Vector2 ActiveStatic { get; set; }
@@ -49,7 +50,8 @@ namespace Physics
             base(newTransform, newScale, newRotation)
         {
             Mass = newMass;
-            IsStatic = isStatic;
+            IsStaticHorizontal = isStatic;
+            IsStaticVertical = isStatic;
             IsIgnoringGravity = false;
             Friction = newFriction;
             Bounciness = newBounciness;
@@ -63,7 +65,8 @@ namespace Physics
             base()
         {
             Mass = 1;
-            IsStatic = false;
+            IsStaticHorizontal = false;
+            IsStaticVertical = false;
             IsIgnoringGravity = false;
             Friction = new FrictionCoefficients() { StaticCoefficient = 0.0f, DynamicCoefficient = 0.0f };
             Bounciness = 0.0f;
@@ -104,24 +107,21 @@ namespace Physics
         {
             Acceleration = CalculateAcceleration(Force);
 
-            if (!IsStatic)
+            //Calculate Velocity using V = at
+            Velocity += (Acceleration * (float)gameTime.ElapsedGameTime.TotalSeconds);
+
+            //Add Air Resistance Drag to Velocity so there's a "Terminal Velocity"
+            Velocity *= (1 - AirResistance);
+
+            //Use Euler Integration to update Position
+            //If the velocity is too low do not
+            if (Math.Abs(Velocity.X) > MinPosChange || Math.Abs(Velocity.Y) > MinPosChange)
             {
-                //Calculate Velocity using V = at
-                Velocity += (Acceleration * (float)gameTime.ElapsedGameTime.TotalSeconds);
-
-                //Add Air Resistance Drag to Velocity so there's a "Terminal Velocity"
-                Velocity *= (1 - AirResistance);
-
-                //Use Euler Integration to update Position
-                //If the velocity is too low do not
-                if (Math.Abs(Velocity.X) > MinPosChange || Math.Abs(Velocity.Y) > MinPosChange)
-                {
-                    Position += (Velocity * (float)gameTime.ElapsedGameTime.TotalSeconds);
-                }
+                Position += (Velocity * (float)gameTime.ElapsedGameTime.TotalSeconds);
             }
 
             //Reset Force so it's not continually applied
-            Force = new Vector2(0, 0);
+            Force = new Vector2(0);
 
             //Reset Friction
             ActiveStatic = new Vector2(0);

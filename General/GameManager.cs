@@ -30,6 +30,9 @@ namespace General
         GameState currentGameState;
         Vector2 camPosOnDebug;
 
+        //Temp
+        MovingPlatform testPlat;
+
         KeyboardState oldState;
         List<GameObject> gameObjects = new List<GameObject>();
         Platform[] previousPlatformRow;
@@ -111,7 +114,7 @@ namespace General
             //Create the Floor Object
             Platform ground = new Platform();
             ground.Mass = 200;
-            ground.IsStatic = true;
+            ground.IsStaticHorizontal = true;
             ground.Position = new Vector2(0, camera.Viewport.Y - 20);
             ground.Scale = new Vector2(0.2f, 0.2f);
             ground.Size = new Vector2(camera.Viewport.X, 20);
@@ -148,7 +151,7 @@ namespace General
             gameObjects.Add(ground);
             physics.RigidBodies.Add(ground);
             gameObjects.Add(bg);
-
+            /*
             //Create the initial on-screen platforms
             List<Platform> platforms = new List<Platform>();
             for (int i = (int)camera.Viewport.Y - InitPlatformDistance; i > 0 - YPlatformBuffer; i -= InitPlatformDistance)
@@ -165,7 +168,24 @@ namespace General
                 platforms[i].Initialize();
                 gameObjects.Add(platforms[i]);
                 physics.RigidBodies.Add(platforms[i]);
-            }
+            }*/
+
+            testPlat = new MovingPlatform();
+            testPlat.Mass = 0.5f;
+            testPlat.IsStaticHorizontal = true;
+            testPlat.IsStaticVertical = true;
+            testPlat.IsIgnoringGravity = true;
+            testPlat.Position = new Vector2(0, camera.Viewport.Y - 150);
+            testPlat.LeftPos = testPlat.Position;
+            testPlat.RightPos = testPlat.Position + new Vector2(100, 0);
+            testPlat.Scale = new Vector2(0.2f, 0.2f);
+            testPlat.Size = new Vector2(100, 20);
+            testPlat.BoxCollider = new Vector2(100, 20);
+            testPlat.Friction = new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.7f, DynamicCoefficient = 0.7f };
+            testPlat.Bounciness = 0.0f;
+
+            gameObjects.Add(testPlat);
+            physics.RigidBodies.Add(testPlat);
 
             //Initialise all our game objects
             for (int i = 0; i < gameObjects.Count; i++)

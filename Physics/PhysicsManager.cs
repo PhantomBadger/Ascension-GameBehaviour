@@ -137,14 +137,14 @@ namespace Physics
             float coefficientOfRestitution = MathHelper.Clamp((colPair.ObjectA.Bounciness * colPair.ObjectB.Bounciness), 0, 1);
 
             //Calc the inverse mass if the object isnt static
-            float invMassA = colPair.ObjectA.IsStatic ? 0.0f : (1 / colPair.ObjectA.Mass);
-            float invMassB = colPair.ObjectB.IsStatic ? 0.0f : (1 / colPair.ObjectB.Mass);
+            float invMassA = colPair.ObjectA.IsStaticHorizontal ? 0.0f : (1 / colPair.ObjectA.Mass);
+            float invMassB = colPair.ObjectB.IsStaticHorizontal ? 0.0f : (1 / colPair.ObjectB.Mass);
 
             //Calculate impulse
             float impulse = (-(1 + coefficientOfRestitution) * velocityAlongContactNormal) / (invMassA + invMassB);
 
             //Resolve the collision with a new velocity and position if they're not static
-            if (!colPair.ObjectA.IsStatic)
+            if (!colPair.ObjectA.IsStaticHorizontal)
             {
                 //Create a new velocity
                 Vector2 objectANewVelocity = colPair.ObjectA.Velocity + (colPair.ContactNormal * (impulse / colPair.ObjectA.Mass));
@@ -153,7 +153,7 @@ namespace Physics
                 colPair.ObjectA.Velocity = objectANewVelocity;
             }
 
-            if (!colPair.ObjectB.IsStatic)
+            if (!colPair.ObjectB.IsStaticHorizontal)
             {
                 //Create a new velocity
                 Vector2 objectBNewVelocity = colPair.ObjectB.Velocity - (colPair.ContactNormal * (impulse / colPair.ObjectB.Mass));

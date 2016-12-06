@@ -43,8 +43,10 @@
   <ItemGroup>
     <Compile Include="Background.cs" />
     <Compile Include="Camera.cs" />
+    <Compile Include="FallingPlatform.cs" />
     <Compile Include="GameManager.cs" />
     <Compile Include="GameObject.cs" />
+    <Compile Include="MovingPlatform.cs" />
     <Compile Include="Platform.cs" />
     <Compile Include="Player.cs" />
     <Compile Include="Program.cs" />

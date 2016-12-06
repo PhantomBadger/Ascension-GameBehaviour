@@ -43,7 +43,7 @@ namespace AI
         /// <param name="newSpeed">Enemy's default movement speed</param>
         /// <param name="newJumpSpeed">Enemy's default jump speed</param>
         public Enemy(RigidBody2D newRigidBody, float newSpeed, float newJumpSpeed, TimeSpan newUpdate) :
-            base(newRigidBody.Position, newRigidBody.Scale, newRigidBody.Rotation, newRigidBody.Mass, newRigidBody.IsStatic, newRigidBody.Friction, newRigidBody.Bounciness)
+            base(newRigidBody.Position, newRigidBody.Scale, newRigidBody.Rotation, newRigidBody.Mass, newRigidBody.IsStaticHorizontal, newRigidBody.Friction, newRigidBody.Bounciness)
         {
             EnemySpeed = newSpeed;
             JumpSpeed = newJumpSpeed;
