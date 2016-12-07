@@ -18,6 +18,9 @@ namespace Physics
             RigidBodies = new List<RigidBody2D>();
         }
 
+        /// <summary>
+        /// Physics Step
+        /// </summary>
         public void Step()
         {
             //Create a list of collision pairs

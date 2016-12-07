@@ -113,6 +113,10 @@ namespace General
             }
         }
 
+        /// <summary>
+        /// On Collision event to allow jumping again
+        /// </summary>
+        /// <param name="col">Collision pair data</param>
         public override void OnCollision(CollisionPair col)
         {
             RigidBody2D collidedObject = col.ObjectA == (RigidBody2D)this ? col.ObjectB : col.ObjectA;

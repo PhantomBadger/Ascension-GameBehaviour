@@ -17,6 +17,9 @@ namespace General
 
         const float MinDistance = 0.5f;
 
+        /// <summary>
+        /// Default Constructor
+        /// </summary>
         public MovingPlatform()
         {
             MoveVelocity = 50.0f;

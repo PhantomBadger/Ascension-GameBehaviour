@@ -31,7 +31,7 @@ namespace General
         Vector2 camPosOnDebug;
 
         //Temp
-        MovingPlatform testPlat;
+        SpringPlatform testPlat;
 
         KeyboardState oldState;
         List<GameObject> gameObjects = new List<GameObject>();
@@ -170,14 +170,12 @@ namespace General
                 physics.RigidBodies.Add(platforms[i]);
             }*/
 
-            testPlat = new MovingPlatform();
+            testPlat = new SpringPlatform();
             testPlat.Mass = 0.5f;
-            testPlat.IsStaticHorizontal = true;
-            testPlat.IsStaticVertical = true;
+            testPlat.IsStaticHorizontal = false;
+            testPlat.IsStaticVertical = false;
             testPlat.IsIgnoringGravity = true;
             testPlat.Position = new Vector2(0, camera.Viewport.Y - 150);
-            testPlat.LeftPos = testPlat.Position;
-            testPlat.RightPos = testPlat.Position + new Vector2(100, 0);
             testPlat.Scale = new Vector2(0.2f, 0.2f);
             testPlat.Size = new Vector2(100, 20);
             testPlat.BoxCollider = new Vector2(100, 20);
@@ -304,6 +302,9 @@ namespace General
             }
         }
 
+        /// <summary>
+        /// Control Handler for User Input
+        /// </summary>
         private void ControllerHandler()
         {
             KeyboardState newState = Keyboard.GetState();

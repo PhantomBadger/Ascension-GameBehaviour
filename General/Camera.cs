@@ -42,6 +42,10 @@ namespace General
                     Matrix.CreateScale(new Vector3(1));
         }
 
+        /// <summary>
+        /// Update the Camera's Position
+        /// </summary>
+        /// <param name="gameTime">Current Game Time</param>
         public void Update(GameTime gameTime)
         {
             if (!GameManager.DebugMode)
@@ -63,6 +67,9 @@ namespace General
             }
         }
 
+        /// <summary>
+        /// Handles the User Input for the Camera when in Debug Mode
+        /// </summary>
         private void ControlHandler()
         {
             if (Keyboard.GetState().IsKeyDown(Keys.Right))

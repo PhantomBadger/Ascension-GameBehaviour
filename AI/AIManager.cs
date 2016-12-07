@@ -18,17 +18,30 @@ namespace AI
         private Texture2D waypointTex;
         private SpriteFont debugFont;
 
+        /// <summary>
+        /// Default Constructor
+        /// </summary>
         public AIManager()
         {
             WaypointNetwork = new List<WaypointNode>();
         }
 
+        /// <summary>
+        /// Load Default Sprite Fonts
+        /// </summary>
+        /// <param name="content">Content Manager</param>
         public void LoadContent(ContentManager content)
         {
             //Load Debug Font
             debugFont = content.Load<SpriteFont>("DebugFont");
         }
 
+        /// <summary>
+        /// Draw the waypoints and connections, used for Debugging
+        /// </summary>
+        /// <param name="gameTime">Current Game Time</param>
+        /// <param name="spriteBatch">Sprite Batch</param>
+        /// <param name="graphicsDevice">Graphics Device</param>
         public void DebugDraw(GameTime gameTime, SpriteBatch spriteBatch, GraphicsDevice graphicsDevice)
         {
             //Create waypoint texture

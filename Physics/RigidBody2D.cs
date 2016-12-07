@@ -206,6 +206,11 @@ namespace Physics
             //Do Nothing
         }
 
+        /// <summary>
+        /// Utility Method to calculate the acceleration of this object given a Force
+        /// </summary>
+        /// <param name="Force">Force to Apply</param>
+        /// <returns>Calculated Acceleration as a Vector2</returns>
         protected Vector2 CalculateAcceleration(Vector2 Force)
         {
             //Apply the Friction to the current Force

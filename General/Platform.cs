@@ -23,6 +23,9 @@ namespace General
         private Texture2D textureMid;
         private Texture2D textureRight;
 
+        /// <summary>
+        /// Default Constructor
+        /// </summary>
         public Platform()
         {
             ConnectedWaypoints = new List<WaypointNode>();
@@ -32,6 +35,10 @@ namespace General
             Tag = "Ground";
         }
 
+        /// <summary>
+        /// Load in all the object textures
+        /// </summary>
+        /// <param name="content">Content Manager</param>
         public override void LoadContent(ContentManager content)
         {
             textureLeft = content.Load<Texture2D>(TextureLeftFile);
@@ -43,22 +50,23 @@ namespace General
             base.LoadContent(content);
         }
 
+        /// <summary>
+        /// Unload all the object textures
+        /// </summary>
         public override void UnloadContent()
         {
-            //groundTexture.Dispose();
+            textureLeft.Dispose();
+            textureMid.Dispose();
+            textureRight.Dispose();
             base.UnloadContent();
         }
 
-        public override void Initialize()
-        {
-            base.Initialize();
-        }
-
-        public override void Update(GameTime gameTime)
-        {
-            base.Update(gameTime);
-        }
-
+        /// <summary>
+        /// Draw the platform, using the left and right textures, then a tiling middle texture
+        /// </summary>
+        /// <param name="gameTime">Current Game Time</param>
+        /// <param name="spriteBatch">Sprite Batch</param>
+        /// <param name="graphicsDevice">Graphics Device</param>
         public override void Draw(GameTime gameTime, SpriteBatch spriteBatch, GraphicsDevice graphicsDevice)
         {
             if (textureLeft == null || textureMid == null || textureRight == null)
@@ -87,6 +95,9 @@ namespace General
             base.Draw(gameTime, spriteBatch, graphicsDevice);
         }
 
+        /// <summary>
+        /// Snap the Platform's Size so that it fits a whole number of tile textures
+        /// </summary>
         private void SizeSnap()
         {
             //Automatically snap to nearest size to allow all the tiles to fit comfortably

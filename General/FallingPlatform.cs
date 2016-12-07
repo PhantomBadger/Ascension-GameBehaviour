@@ -19,6 +19,10 @@ namespace General
         const float shakeSpeed = 50.0f;
         const float shakeScale = 1.25f;
 
+        /// <summary>
+        /// Update the Falling Platform Position
+        /// </summary>
+        /// <param name="gameTime">Current Game Time</param>
         public override void Update(GameTime gameTime)
         {
             //If we've triggered the fall
@@ -46,6 +50,10 @@ namespace General
             base.Update(gameTime);
         }
 
+        /// <summary>
+        /// Collision Specific Events, Triggers the falling process when something lands ontop
+        /// </summary>
+        /// <param name="col">The Collision Pair Data</param>
         public override void OnCollision(CollisionPair col)
         {
             if (col.ContactNormal.Y == 1 && !triggerFall)

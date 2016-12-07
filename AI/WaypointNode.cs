@@ -40,6 +40,10 @@ namespace AI
             ConnectedNodes = new List<WaypointNode>();
         }
 
+        /// <summary>
+        /// Calculate the H Value for the Waypoint, using the distance to the goal position along with the current plaform Friction & Bounciness
+        /// </summary>
+        /// <param name="goalPos">The Goal Position</param>
         public void CalculateH(Vector2 goalPos)
         {
             Vector2 dxy = goalPos - Position;
@@ -56,6 +60,9 @@ namespace AI
             H = h;
         }
 
+        /// <summary>
+        /// Calculate the G Value for the Waypoint, usually the total cost of the path up until here
+        /// </summary>
         public void CalculateG()
         {
             //Heuristic Total from start to here

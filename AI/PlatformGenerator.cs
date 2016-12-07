@@ -12,12 +12,13 @@ namespace AI
     class PlatformGenerator
     {
         //Generation Parameters
+        public const int PlatformYSize = 20;
+        public const float WaypointEdgeBuffer = 20.0f;
+
         private const int MaxPlatformNumbers = 5;
         private const int MinPlatformNumbers = 1;
         private const int MaxPlatformSpacePercentOfScreen = 30;
         private const int GenerationPosYOffset = 0;
-        public const int PlatformYSize = 20;
-        public const float WaypointEdgeBuffer = 20.0f;
 
         //Object Templates that are re-used when generating
         //Friction and Bounciness
@@ -145,6 +146,13 @@ namespace AI
             return platforms;
         }
 
+        /// <summary>
+        /// Generate the Waypoints for the given platform row and connect them to the previous one at the given Y offset
+        /// </summary>
+        /// <param name="CurrentPlatformRow">An Array of the Current Plaform Row to generate Waypoints for</param>
+        /// <param name="PreviousPlatformRow">An Array of the Previous Platform Row to connect the generated Waypoints to</param>
+        /// <param name="waypointYOffset">The Y Offset to place the waypoints at</param>
+        /// <returns>An array of WaypointNodes</returns>
         public WaypointNode[] GenerateWaypoints(Platform[] CurrentPlatformRow, Platform[] PreviousPlatformRow, float waypointYOffset)
         {
             //TODO:

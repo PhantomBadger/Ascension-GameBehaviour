@@ -149,6 +149,12 @@ namespace AI
             base.Update(gameTime);
         }
 
+        /// <summary>
+        /// Select the next TravellingToNode State based on the node positions
+        /// </summary>
+        /// <param name="currentNode">The Node the character is at</param>
+        /// <param name="nextNode">The next Node the character is going to</param>
+        /// <returns>The TravellingToNode State</returns>
         private TravellingToNodeState SelectTravellingState(WaypointNode currentNode, WaypointNode nextNode)
         {
             //Reset jumped flag
@@ -168,6 +174,10 @@ namespace AI
             }
         }
 
+        /// <summary>
+        /// Move Towards the next node based on the TravellingToNode State 
+        /// </summary>
+        /// <param name="targetNode">The character's target node</param>
         private void MoveTowards(WaypointNode targetNode)
         {
             //Get distance data
@@ -276,6 +286,10 @@ namespace AI
             }
         }
 
+        /// <summary>
+        /// Utility method to automatically slow down the character on the Horizontal plan by moving in the opposite direction of it's velocity
+        /// </summary>
+        /// <param name="dx">The distance to the target</param>
         private void SlowdownHorizontal(float dx)
         {
             //Move in Opposite direction for num of frames

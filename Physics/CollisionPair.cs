@@ -12,10 +12,5 @@ namespace Physics
         public Vector2 ContactPoint { get; set; }
         public Vector2 ContactNormal { get; set; }
         public Vector2 ContactPenetration { get; set; }
-
-        public CollisionPair()
-        {
-
-        }
     }
 }
