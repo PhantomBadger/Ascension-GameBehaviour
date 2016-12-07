@@ -52,11 +52,6 @@ namespace General
             float springForce;
             springForce = ((-Stiffness) * (length)) * Dampen;
 
-            if (dxy != new Vector2(0))
-            {
-               // dxy.Normalize();
-            }
-
             Force = (dxy  * -1) * springForce;
 
             base.Update(gameTime);
