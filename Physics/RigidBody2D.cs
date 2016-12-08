@@ -8,7 +8,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Physics
 {
-    class RigidBody2D : GameObject
+    public class RigidBody2D : GameObject
     {
         public struct FrictionCoefficients
         {
@@ -118,6 +118,11 @@ namespace Physics
             if (Math.Abs(Velocity.X) > MinPosChange || Math.Abs(Velocity.Y) > MinPosChange)
             {
                 Position += (Velocity * (float)gameTime.ElapsedGameTime.TotalSeconds);
+            }
+
+            if (Tag == "Enemy")
+            {
+                Console.WriteLine(Force + " | " + Velocity);
             }
 
             //Reset Force so it's not continually applied

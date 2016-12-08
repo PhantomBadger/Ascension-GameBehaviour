@@ -11,13 +11,16 @@ using AI;
 
 namespace General
 {
-    class Platform : RigidBody2D
+    public class Platform : RigidBody2D
     {
+        public enum PlatformTypes { Static, DynamicMoving, DynamicFalling, DynamicSpring }
+
         public Vector2 Size { get; set; }
         public string TextureLeftFile { get; set; } = "stoneLeft.png";
         public string TextureMidFile { get; set; } = "stoneMid.png";
         public string TextureRightFile { get; set; } = "stoneRight.png";
         public List<WaypointNode> ConnectedWaypoints;
+        public PlatformTypes PlatformType;
 
         private Texture2D textureLeft;
         private Texture2D textureMid;
@@ -28,6 +31,7 @@ namespace General
         /// </summary>
         public Platform()
         {
+            PlatformType = PlatformTypes.Static;
             ConnectedWaypoints = new List<WaypointNode>();
             Size = new Vector2();
             Scale = new Vector2(1, 1);

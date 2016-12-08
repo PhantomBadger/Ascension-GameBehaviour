@@ -11,7 +11,7 @@ using Microsoft.Xna.Framework.Input;
 
 namespace AI
 {
-    class Enemy : RigidBody2D
+    public class Enemy : RigidBody2D
     {
         public enum EnemyState { TravellingToNode, SelectingNode, AtGoal }
         public enum TravellingToNodeState { SamePlatform, DifferentPlatformHorizontal, DifferentPlatformVertical, Lost }
@@ -23,18 +23,19 @@ namespace AI
         public TravellingToNodeState CurrentMovingState { get; set; }
         public WaypointNode PreviousNode { get; set; }
         public WaypointNode NextNode { get; set; }
+        public bool OnGround { get; set; } = false;
 
         private Texture2D enemyTexture;
         private Texture2D waypointTex;
         private SpriteFont debugFont;
-        private bool onGround = false;
         private Queue<WaypointNode> currentPath;
         private Platform currentPlatform;
         private TimeSpan gameUpdateStep;
         private bool hasJumped = false;
 
         private const float MinDistance = 0.05f;
-        private const float MinNodeDistance = 1f;
+        private const float MinNodeJumpX = 30f;
+        private const float MaxNodeJumpX = 70f;
 
         /// <summary>
         /// Constructor for the Enemy Class with full info
@@ -127,7 +128,7 @@ namespace AI
                         Vector2 dxy = NextNode.Position - Position;
                         //Console.WriteLine($"Next Node: ({NextNode.Position.X}, {NextNode.Position.Y}) CurrentPos ({Position.X}, {Position.Y})");
                         Rectangle tempRec = new Rectangle(Position.ToPoint() + new Point((int)BoxCollider.X / 4, 0), (BoxCollider / 2).ToPoint());
-                        if (tempRec.Contains(NextNode.Position) && onGround)
+                        if (tempRec.Contains(NextNode.Position) && OnGround)
                         {
                             //Console.WriteLine("AT GOAL");
                             //If we have items left in the queue go to selecting node, if not we're at goal
@@ -142,8 +143,8 @@ namespace AI
                     }
             }
 
-            //Set onGround to false
-            onGround = false;
+            //Set OnGround to false
+            OnGround = false;
 
             //Call RigidBody Update
             base.Update(gameTime);
@@ -188,9 +189,24 @@ namespace AI
             {
                 case TravellingToNodeState.SamePlatform:
                     {
+                        //Higher leniency means more velocity at the target node
+                        //Peek ahead to see whether we can afford to keep some momentum
+                        //Or whether we need to slow down completely
+                        WaypointNode peekNode = currentPath.Peek();
+                        float leniency = 1.5f;
+                        if (peekNode != null)
+                        {
+                            Vector2 peekDeltaXY = peekNode.Position - targetNode.Position;
+                            if ((peekDeltaXY.X > 0 && deltaXY.X > 0) ||
+                                (peekDeltaXY.X < 0 && deltaXY.X < 0))
+                            {
+                                leniency = 4.0f;
+                            }
+                        }
+
                         //Move in a straight line towards the target node, slowing down when near it
                         double oppAcc = CalculateAcceleration(new Vector2(-Force.X, Force.Y)).X;
-                        double timeToSlowdown = -Velocity.X / oppAcc;
+                        double timeToSlowdown = -Velocity.X / (oppAcc * leniency);
                         double distanceRequired = Math.Abs(Velocity.X * timeToSlowdown);
 
                         //Console.WriteLine($"slowdownDist {distanceRequired}, curDist {deltaXY.X}");
@@ -220,12 +236,12 @@ namespace AI
                     {
                         //If we're below the target node, then we've fallen and are lost
                         if ((currentPlatform.Position.Y < targetNode.ConnectedPlatform.Position.Y) ||
-                            (hasJumped && onGround && currentPlatform != targetNode.ConnectedPlatform))
+                            (hasJumped && OnGround && currentPlatform != targetNode.ConnectedPlatform))
                         {
                             CurrentMovingState = TravellingToNodeState.Lost;
                             break;
                         }
-                        else if (hasJumped && onGround && currentPlatform == targetNode.ConnectedPlatform)
+                        else if (hasJumped && OnGround && currentPlatform == targetNode.ConnectedPlatform)
                         {
                             //Change to Same-Platform traversal
                             WaypointNode tempNode = new WaypointNode(Position);
@@ -246,32 +262,41 @@ namespace AI
                         //If we've landed on the same platform as the node, switch to same platform
                         if (currentPlatform == targetNode.ConnectedPlatform)
                         {
-                            WaypointNode tempNode = new WaypointNode(Position);
-                            PreviousNode = tempNode;
+                            CurrentState = EnemyState.SelectingNode;
                             CurrentMovingState = TravellingToNodeState.SamePlatform;
                             break;
                         }
-                        else if (currentPlatform != targetNode.ConnectedPlatform &&
-                                 currentPlatform != PreviousNode.ConnectedPlatform)
+                        else if ((currentPlatform != targetNode.ConnectedPlatform &&
+                                 currentPlatform != PreviousNode.ConnectedPlatform) ||
+                                 (hasJumped && OnGround && currentPlatform != targetNode.ConnectedPlatform))
                         {
                             //Lost
                             CurrentMovingState = TravellingToNodeState.Lost;
                             break;
                         }
 
-                        //Jump to get airborne
-                        Jump();
-
-                        //Once we're near the target Y, then move across the X
-                        if (deltaXY.Y > -MinDistance)
+                        //If we're in jumping range - We only wont be if we're on a moving platform
+                        if ((deltaXY.X > MinNodeJumpX && deltaXY.X < MaxNodeJumpX && nodeDeltaXY.X > 0) ||
+                            (deltaXY.X < -MinNodeJumpX && deltaXY.X > -MaxNodeJumpX && nodeDeltaXY.X <= 0))
                         {
-                            //Move in direction
-                            MoveHorizontal(deltaXY.X);
+                            //Jump to get airborne
+                            Jump();
+
+                            //Once we're near the target Y, then move across the X
+                            if (deltaXY.Y > -MinDistance)
+                            {
+                                //Move in direction
+                                MoveHorizontal(deltaXY.X);
+                            }
+                            else
+                            {
+                                //Correct velocity to 0
+                                SlowdownHorizontal(deltaXY.X);
+                            }
                         }
                         else
                         {
-                            //Correct velocity to 0
-                            SlowdownHorizontal(deltaXY.X);
+                            MoveHorizontal(deltaXY.X + (MinNodeJumpX * Math.Sign(nodeDeltaXY.X)));
                         }
                         break;
                     }
@@ -279,7 +304,7 @@ namespace AI
                     {
                         //We're not where we should be...
                         //Find a new path
-                       // Console.WriteLine("LOST");
+                        NextNode = MakeTempNode(false);
                         CurrentState = EnemyState.AtGoal;
                         break;
                     }
@@ -348,14 +373,34 @@ namespace AI
         private void Jump()
         {
             //Move Left
-            if (onGround)
+            if (OnGround)
             {
                 Force = new Vector2(Force.X, -JumpSpeed);
-                onGround = false;
+                OnGround = false;
                 hasJumped = true;
             }
         }
 
+        /// <summary>
+        /// Creates a temp node connected to the local
+        /// </summary>
+        /// <returns></returns>
+        private WaypointNode MakeTempNode(bool stillOnCurrentPath)
+        {
+            WaypointNode tempNode = new WaypointNode(Position);
+
+            if (!stillOnCurrentPath)
+            {
+                tempNode.ConnectedNodes = currentPlatform.ConnectedWaypoints;
+            }
+            else
+            {
+                tempNode.ConnectedNodes.Add(currentPath.Peek());
+            }
+
+            return tempNode;
+        }
+        
         /// <summary>
         /// Draw whats needed this frame
         /// </summary>
@@ -412,13 +457,24 @@ namespace AI
             RigidBody2D collidedObject = col.ObjectA == (RigidBody2D)this ? col.ObjectB : col.ObjectA;
             if (collidedObject.Tag == "Ground" && collidedObject.Position.Y >= Position.Y && col.ContactNormal.Y != 0.0f)
             {
-                //If we're with the ground, set the variable onGround to true
+                //If we're with the ground, set the variable OnGround to true
                 //Also check if the collided object is below me
                 //Console.WriteLine("On the ground");
-                onGround = true;
+                OnGround = true;
                 currentPlatform = (Platform)collidedObject;
             }
             base.OnCollision(col);
+        }
+
+        /// <summary>
+        /// Generates a new path, creating a temp node at the current location
+        /// </summary>
+        public void InvalidatePath()
+        {
+            Console.WriteLine("INVALIDATED");
+            PreviousNode = MakeTempNode(true);
+            NextNode = currentPath.Peek();
+            CurrentState = EnemyState.AtGoal;
         }
         
     }

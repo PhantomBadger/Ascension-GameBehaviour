@@ -26,12 +26,10 @@ namespace General
         PlatformGenerator platformGenerator;
         Player player;
         Enemy enemy;
+
         Camera camera;
         GameState currentGameState;
         Vector2 camPosOnDebug;
-
-        //Temp
-        SpringPlatform testPlat;
 
         KeyboardState oldState;
         List<GameObject> gameObjects = new List<GameObject>();
@@ -47,6 +45,7 @@ namespace General
             physics = new PhysicsManager();
             ai = new AIManager();
             platformGenerator = new PlatformGenerator();
+            platformGenerator.AIReference = ai;
 
             //Run at a fixed step at 60 FPS
             IsFixedTimeStep = true;
@@ -110,6 +109,7 @@ namespace General
             enemy.Tag = "Enemy";
             physics.RigidBodies.Add(enemy);
             gameObjects.Add(enemy);
+            platformGenerator.EnemyReference = enemy;
 
             //Create the Floor Object
             Platform ground = new Platform();
@@ -151,7 +151,7 @@ namespace General
             gameObjects.Add(ground);
             physics.RigidBodies.Add(ground);
             gameObjects.Add(bg);
-            /*
+            
             //Create the initial on-screen platforms
             List<Platform> platforms = new List<Platform>();
             for (int i = (int)camera.Viewport.Y - InitPlatformDistance; i > 0 - YPlatformBuffer; i -= InitPlatformDistance)
@@ -168,22 +168,7 @@ namespace General
                 platforms[i].Initialize();
                 gameObjects.Add(platforms[i]);
                 physics.RigidBodies.Add(platforms[i]);
-            }*/
-
-            testPlat = new SpringPlatform();
-            testPlat.Mass = 0.5f;
-            testPlat.IsStaticHorizontal = false;
-            testPlat.IsStaticVertical = false;
-            testPlat.IsIgnoringGravity = true;
-            testPlat.Position = new Vector2(0, camera.Viewport.Y - 150);
-            testPlat.Scale = new Vector2(0.2f, 0.2f);
-            testPlat.Size = new Vector2(100, 20);
-            testPlat.BoxCollider = new Vector2(100, 20);
-            testPlat.Friction = new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.7f, DynamicCoefficient = 0.7f };
-            testPlat.Bounciness = 0.0f;
-
-            gameObjects.Add(testPlat);
-            physics.RigidBodies.Add(testPlat);
+            }
 
             //Initialise all our game objects
             for (int i = 0; i < gameObjects.Count; i++)
@@ -253,6 +238,12 @@ namespace General
                                 if (physics.RigidBodies[i].Tag == "Ground")
                                 {
                                     Platform plat = (Platform)physics.RigidBodies[i];
+                                    //If dynamic allow Platform Gen to make a new one
+                                    if (plat.PlatformType != Platform.PlatformTypes.Static)
+                                    {
+                                        platformGenerator.ContainsDynamic = false;
+                                    }
+
                                     for (int j = 0; j < plat.ConnectedWaypoints.Count; j++)
                                     {
                                         ai.WaypointNetwork.Remove(plat.ConnectedWaypoints[j]);

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
+using AI;
 
 namespace General
 {
@@ -12,8 +13,10 @@ namespace General
         public float MoveVelocity { get; set; }
         public Vector2 LeftPos { get; set; }
         public Vector2 RightPos { get; set; }
+        public Enemy EnemyReference { get; set; }
 
         bool isMovingRight = true;
+        Vector2 prevPos;
 
         const float MinDistance = 0.5f;
 
@@ -25,6 +28,15 @@ namespace General
             MoveVelocity = 50.0f;
             LeftPos = new Vector2(0);
             RightPos = new Vector2(0);
+        }
+
+        /// <summary>
+        /// Overridden Initialise
+        /// </summary>
+        public override void Initialize()
+        {
+            prevPos = Position;
+            base.Initialize();
         }
 
         /// <summary>
@@ -43,10 +55,22 @@ namespace General
             Vector2 dist = isMovingRight ? RightPos - Position : LeftPos - Position;
             if (Math.Abs(dist.X) < MinDistance && Math.Abs(dist.Y) < MinDistance)
             {
-                Console.WriteLine("Flipperoo");
                 isMovingRight = !isMovingRight;
                 Velocity = new Vector2(isMovingRight ? MoveVelocity : -MoveVelocity, 0.0f);
+
+                if (EnemyReference != null && EnemyReference.OnGround)
+                {
+                    EnemyReference.InvalidatePath();
+                }
             }
+
+            //Update Waypoints
+            Vector2 posDxy = Position - prevPos;
+            for (int i = 0; i < ConnectedWaypoints.Count; i++)
+            {
+                ConnectedWaypoints[i].Position += posDxy;
+            }
+            prevPos = Position;
 
             base.Update(gameTime);
         }

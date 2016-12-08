@@ -11,7 +11,7 @@ using System.Linq;
 
 namespace AI
 {
-    class AIManager
+    public class AIManager
     {
         public List<WaypointNode> WaypointNetwork { get; set; }
 
@@ -182,7 +182,7 @@ namespace AI
                 Queue<WaypointNode> path = new Queue<WaypointNode>();
                 //Trace back through the end node to the start node
                 WaypointNode pathNode = endNode;
-                while (pathNode != startNode)
+                while (pathNode != null && pathNode != startNode)
                 {
                     path.Enqueue(pathNode);
                     pathNode = pathNode.ParentNode;

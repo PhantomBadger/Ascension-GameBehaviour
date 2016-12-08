@@ -6,11 +6,15 @@ using System.Threading.Tasks;
 using General;
 using Microsoft.Xna.Framework;
 using Physics;
+using AI;
 
 namespace General
 {
     class FallingPlatform : Platform
     {
+        public Enemy EnemyReference { get; set; }
+        public AIManager AIReference { get; set; }
+
         bool triggerFall = false;
         bool hasFallen = false;
         float fallCounter = 0;
@@ -32,15 +36,22 @@ namespace General
                 if ((fallCounter += (float)gameTime.ElapsedGameTime.TotalSeconds) > FallCounterMax)
                 {
                     //Fall
-                    Console.WriteLine("Fall");
                     hasFallen = true;
                     IsIgnoringGravity = false;
-                    IsStaticHorizontal = false;
+                    IsStaticVertical = false;
+
+                    for (int i = 0; i < ConnectedWaypoints.Count; i++)
+                    {
+                        ConnectedWaypoints[i].IsActive = false;
+                    }
+
+                    if (EnemyReference != null)
+                    {
+                        EnemyReference.InvalidatePath();
+                    }
                 }
                 else
                 {
-                    Console.WriteLine("Shakeyshakeyshakey");
-
                     //Shake
                     float xChange = (float)Math.Sin(gameTime.TotalGameTime.TotalSeconds * shakeSpeed) * shakeScale;
                     Position = new Vector2(Position.X + xChange, Position.Y);

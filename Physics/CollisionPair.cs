@@ -5,7 +5,7 @@ using Microsoft.Xna.Framework;
 
 namespace Physics
 {
-    class CollisionPair
+    public class CollisionPair
     {
         public RigidBody2D ObjectA { get; set; }
         public RigidBody2D ObjectB { get; set; }

@@ -20,8 +20,8 @@ namespace General
         /// </summary>
         public SpringPlatform()
         {
-            Stiffness = 100.0f;
-            Dampen = 0.2f;
+            Stiffness = 150.0f;
+            Dampen = 0.8f;
         }
 
         /// <summary>

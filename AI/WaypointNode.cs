@@ -8,15 +8,19 @@ using General;
 
 namespace AI
 {
-    class WaypointNode
+    public class WaypointNode
     {
         public Vector2 Position { get; set; }
         public List<WaypointNode> ConnectedNodes { get; set; }
         public Platform ConnectedPlatform { get; set; }
+        public bool IsActive { get; set; }
         public float G { get; private set; }
         public float H { get; private set; }
         public WaypointNode ParentNode { get; set; }
-        
+
+        //Float.MaxValue can cause issues with the Debug Font
+        private const float MaxGValue = 9999999999999999999;
+
         /// <summary>
         /// Default Constructor
         /// </summary>
@@ -27,6 +31,7 @@ namespace AI
             Position = new Vector2();
             ConnectedPlatform = null;
             ConnectedNodes = new List<WaypointNode>();
+            IsActive = true;
         }
 
         /// <summary>
@@ -57,7 +62,13 @@ namespace AI
             //And low bounciness for more stability
             h += (ConnectedPlatform.Bounciness * 100);
 
-            H = h;
+            //Heavy penalty for moving platforms as they mess with the path navigation
+            if (ConnectedPlatform.PlatformType == Platform.PlatformTypes.DynamicMoving)
+            {
+                h = MaxGValue;
+            }
+
+            H = IsActive ? h : MaxGValue;
         }
 
         /// <summary>
