@@ -34,7 +34,7 @@ namespace AI
         private bool hasJumped = false;
 
         private const float MinDistance = 0.05f;
-        private const float MinNodeJumpX = 30f;
+        private const float MinNodeJumpX = 40f;
         private const float MaxNodeJumpX = 70f;
 
         /// <summary>
@@ -185,6 +185,9 @@ namespace AI
             Vector2 deltaXY = targetNode.Position - (new Vector2(Position.X + (BoxCollider.X / 2), Position.Y));
             Vector2 nodeDeltaXY = targetNode.Position - PreviousNode.Position;
 
+
+            //Console.WriteLine($"Node Delta: {nodeDeltaXY} | Enemy Delta: {deltaXY}");
+
             switch (CurrentMovingState)
             {
                 case TravellingToNodeState.SamePlatform:
@@ -192,16 +195,23 @@ namespace AI
                         //Higher leniency means more velocity at the target node
                         //Peek ahead to see whether we can afford to keep some momentum
                         //Or whether we need to slow down completely
-                        WaypointNode peekNode = currentPath.Peek();
                         float leniency = 1.5f;
-                        if (peekNode != null)
+                        try
                         {
-                            Vector2 peekDeltaXY = peekNode.Position - targetNode.Position;
-                            if ((peekDeltaXY.X > 0 && deltaXY.X > 0) ||
-                                (peekDeltaXY.X < 0 && deltaXY.X < 0))
+                            WaypointNode peekNode = currentPath.Peek();
+                            if (peekNode != null)
                             {
-                                leniency = 4.0f;
+                                Vector2 peekDeltaXY = peekNode.Position - targetNode.Position;
+                                if ((peekDeltaXY.X > 0 && deltaXY.X > 0) ||
+                                    (peekDeltaXY.X < 0 && deltaXY.X < 0))
+                                {
+                                    leniency = 4.0f;
+                                }
                             }
+                        }
+                        catch
+                        {
+                            //Do Nothing
                         }
 
                         //Move in a straight line towards the target node, slowing down when near it
@@ -275,29 +285,73 @@ namespace AI
                             break;
                         }
 
-                        //If we're in jumping range - We only wont be if we're on a moving platform
-                        if ((deltaXY.X > MinNodeJumpX && deltaXY.X < MaxNodeJumpX && nodeDeltaXY.X > 0) ||
-                            (deltaXY.X < -MinNodeJumpX && deltaXY.X > -MaxNodeJumpX && nodeDeltaXY.X <= 0))
-                        {
-                            //Jump to get airborne
-                            Jump();
+                        //Calculate the wanted jump location
+                        float jumpXPos = targetNode.Position.X +
+                            ((Math.Abs(targetNode.Position.X - targetNode.ConnectedPlatform.Position.X) < Math.Abs(targetNode.Position.X - (targetNode.ConnectedPlatform.Position.X + targetNode.ConnectedPlatform.BoxCollider.X))) ? -MinNodeJumpX : MinNodeJumpX);
+                        float jumpPosDeltaX = jumpXPos - Position.X;
+                        float prevNodeDeltaX = PreviousNode.Position.X - Position.X;
 
-                            //Once we're near the target Y, then move across the X
-                            if (deltaXY.Y > -MinDistance)
+                        //Are we on a moving platform?
+                        if (currentPlatform.PlatformType == Platform.PlatformTypes.DynamicMoving)
+                        {
+                            //Move with the platform until we're at the jump
+                            Vector2 platformVel = currentPlatform.Velocity;
+                            //Navigate to the jumpPos
+                            if (Math.Abs(jumpPosDeltaX) > MinNodeJumpX && Math.Abs(jumpPosDeltaX) < MaxNodeJumpX && !hasJumped)
                             {
-                                //Move in direction
+                                //Needs to jump
+                                Jump();
+                            }
+                            else if (!hasJumped)
+                            {
+                                //Hasnt jumped
+                                MoveHorizontal(prevNodeDeltaX);
+                            }
+                            else
+                            {
+                                //Has jumped
+                                MoveHorizontal(deltaXY.X);
+                            }
+
+                        }
+                        //Are we jumping to a moving platform?
+                        else if (targetNode.ConnectedPlatform.PlatformType == Platform.PlatformTypes.DynamicMoving)
+                        {
+                            //Wait until the platform is in range
+                            if (Math.Abs(deltaXY.X) < MaxNodeJumpX && !hasJumped)
+                            {
+                                Jump();
+                            }
+                            else if (hasJumped)
+                            {
                                 MoveHorizontal(deltaXY.X);
                             }
                             else
                             {
-                                //Correct velocity to 0
-                                SlowdownHorizontal(deltaXY.X);
+                                MoveHorizontal(prevNodeDeltaX);
                             }
                         }
+                        //Otherwise
                         else
                         {
-                            MoveHorizontal(deltaXY.X + (MinNodeJumpX * Math.Sign(nodeDeltaXY.X)));
+                            //Navigate to the jumpPos
+                            if (jumpPosDeltaX < (Math.Sign(jumpPosDeltaX) * MinNodeJumpX) && !hasJumped)
+                            {
+                                //Needs to jump
+                                Jump();
+                            }
+                            else if (!hasJumped)
+                            {
+                                //Hasnt jumped
+                                MoveHorizontal(jumpPosDeltaX);
+                            }
+                            else
+                            {
+                                //Has jumped
+                                MoveHorizontal(deltaXY.X);
+                            }
                         }
+
                         break;
                     }
                 case TravellingToNodeState.Lost:

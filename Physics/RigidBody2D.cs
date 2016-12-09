@@ -120,11 +120,6 @@ namespace Physics
                 Position += (Velocity * (float)gameTime.ElapsedGameTime.TotalSeconds);
             }
 
-            if (Tag == "Enemy")
-            {
-                Console.WriteLine(Force + " | " + Velocity);
-            }
-
             //Reset Force so it's not continually applied
             Force = new Vector2(0);
 

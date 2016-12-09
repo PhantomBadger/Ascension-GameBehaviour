@@ -101,8 +101,8 @@ namespace General
                                               false,
                                               new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.0f, DynamicCoefficient = 0.0f },
                                               0.8f),
-                                 100.0f,
-                                 7750.0f,
+                                 90.0f,
+                                 7600.0f,
                                  updateStep);
             enemy.AI = ai;
             enemy.BoxCollider = new Vector2(31.5f, 45);

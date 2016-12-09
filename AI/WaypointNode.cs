@@ -65,7 +65,7 @@ namespace AI
             //Heavy penalty for moving platforms as they mess with the path navigation
             if (ConnectedPlatform.PlatformType == Platform.PlatformTypes.DynamicMoving)
             {
-                h = MaxGValue;
+                //h = MaxGValue;
             }
 
             H = IsActive ? h : MaxGValue;
