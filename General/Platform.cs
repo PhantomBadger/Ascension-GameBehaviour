@@ -87,13 +87,13 @@ namespace General
                 //Assume all tiles are the same size
                 float texSize = textureMid.Width * Scale.X;
 
-                spriteBatch.Draw(textureLeft, new Vector2(Position.X + posOffset, Position.Y), null, Color.White, Rotation.Z, Vector2.Zero, Scale, SpriteEffects.None, 0.0f);
+                spriteBatch.Draw(textureLeft, new Vector2(Position.X + posOffset, Position.Y), null, Color.White, Rotation.Z, Vector2.Zero, Scale, SpriteEffects.None, 0.1f);
                 posOffset += texSize;
                 for (int i = 0; i < midCount; i++, posOffset += texSize)
                 {
-                    spriteBatch.Draw(textureMid, new Vector2(Position.X + posOffset, Position.Y), null, Color.White, Rotation.Z, Vector2.Zero, Scale, SpriteEffects.None, 0.0f);
+                    spriteBatch.Draw(textureMid, new Vector2(Position.X + posOffset, Position.Y), null, Color.White, Rotation.Z, Vector2.Zero, Scale, SpriteEffects.None, 0.1f);
                 }
-                spriteBatch.Draw(textureRight, new Vector2(Position.X + posOffset, Position.Y), null, Color.White, Rotation.Z, Vector2.Zero, Scale, SpriteEffects.None, 0.0f);
+                spriteBatch.Draw(textureRight, new Vector2(Position.X + posOffset, Position.Y), null, Color.White, Rotation.Z, Vector2.Zero, Scale, SpriteEffects.None, 0.1f);
             }
 
             base.Draw(gameTime, spriteBatch, graphicsDevice);

@@ -10,7 +10,7 @@ using Physics;
 
 namespace General
 {
-    class Camera
+    public class Camera
     {
         public Vector2 Position { get; set; }
         public Vector2 Viewport { get; set; }
@@ -19,7 +19,7 @@ namespace General
         private float increaseCounter = 0.0f;
 
         private const float MaxMoveRate = 2.5f;
-        private const float RateStep = 0.1f;
+        private const float RateStep = 0.2f;
         private const float IncreaseRate = 7.5f;
 
         /// <summary>
@@ -28,7 +28,7 @@ namespace General
         /// <returns>Vector2 of the screen's center</returns>
         public Vector2 GetViewportMid()
         {
-            return (Viewport / 2.0f);
+            return (Viewport / 2.0f) +  Position;
         }
 
         /// <summary>
@@ -100,9 +100,9 @@ namespace General
             //Use a simple AABB Detection with the current viewport and the 
             //rigidbody's box collider
             return (Position.X + Viewport.X > rigidbody.Position.X &&
-                    Position.X - Viewport.X < rigidbody.Position.X + rigidbody.BoxCollider.X &&
+                    Position.X < rigidbody.Position.X + rigidbody.BoxCollider.X &&
                     Position.Y + Viewport.Y > rigidbody.Position.Y &&
-                    Position.Y - Viewport.Y < rigidbody.Position.Y + rigidbody.BoxCollider.Y);
+                    Position.Y < rigidbody.Position.Y + rigidbody.BoxCollider.Y);
         }
     }
 }

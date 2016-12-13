@@ -19,3 +19,9 @@
 /processorParam:TextureFormat=Compressed
 /build:DebugFont.spritefont
 
+#begin UIFont.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:TextureFormat=Compressed
+/build:UIFont.spritefont
+

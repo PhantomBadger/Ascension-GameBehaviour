@@ -15,7 +15,7 @@ namespace General
     {
         public static bool DebugMode = false;
         public static Vector2 Gravity = new Vector2(0, 98.0f);
-        const int InitPlatformDistance = 125;
+        const int PlatformDistance = 125;
         const int YPlatformBuffer = 500;
         public enum GameState { Countdown, Play, GameOver };
 
@@ -24,18 +24,29 @@ namespace General
         PhysicsManager physics;
         AIManager ai;
         PlatformGenerator platformGenerator;
+        float nextPlatformY = 0;
         Player player;
         Enemy enemy;
 
         Camera camera;
         GameState currentGameState;
+        const int countdownStart = 5;
+        int countdownVal;
+        float countdownTimer = 0;
         Vector2 camPosOnDebug;
+        Texture2D[] countdownTextures = new Texture2D[6];
+        Texture2D winTexture;
+        Texture2D lossTexture;
+        bool didPlayerWin = false;
 
         KeyboardState oldState;
         List<GameObject> gameObjects = new List<GameObject>();
         Platform[] previousPlatformRow;
 
         TimeSpan updateStep;
+
+        const float shakeSpeed = 5.0f;
+        const float shakeScale = 10.0f;
 
         public GameManager()
         {
@@ -69,12 +80,16 @@ namespace General
             //Init AI State
             platformGenerator.Initialize();
 
+            //Init Keyboard State
             oldState = Keyboard.GetState();
 
             //Create Camera
             camera = new Camera();
             camera.Viewport = new Vector2(GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
             camera.Position = new Vector2(0);
+
+            //Init Game State
+            countdownVal = countdownStart;
 
             //Create the Player Component
             player = new Player(new RigidBody2D(new Vector2(0),
@@ -89,6 +104,7 @@ namespace General
 
             player.BoxCollider = new Vector2(31.5f, 45);
             player.Tag = "Player";
+            player.CameraRef = camera;
             //Add to the collections
             physics.RigidBodies.Add(player);
             gameObjects.Add(player);
@@ -102,11 +118,12 @@ namespace General
                                               new RigidBody2D.FrictionCoefficients() { StaticCoefficient = 0.0f, DynamicCoefficient = 0.0f },
                                               0.8f),
                                  90.0f,
-                                 7600.0f,
+                                 7700.0f,
                                  updateStep);
             enemy.AI = ai;
             enemy.BoxCollider = new Vector2(31.5f, 45);
             enemy.Tag = "Enemy";
+            enemy.CameraRef = camera;
             physics.RigidBodies.Add(enemy);
             gameObjects.Add(enemy);
             platformGenerator.EnemyReference = enemy;
@@ -154,7 +171,7 @@ namespace General
             
             //Create the initial on-screen platforms
             List<Platform> platforms = new List<Platform>();
-            for (int i = (int)camera.Viewport.Y - InitPlatformDistance; i > 0 - YPlatformBuffer; i -= InitPlatformDistance)
+            for (int i = (int)camera.Viewport.Y - PlatformDistance; i > 0 - YPlatformBuffer; i -= PlatformDistance)
             {
                 Platform[] platformRow = platformGenerator.GeneratePlatforms(new Vector2(0, i), camera.Viewport.X);
                 platforms.AddRange(platformRow);
@@ -169,6 +186,8 @@ namespace General
                 gameObjects.Add(platforms[i]);
                 physics.RigidBodies.Add(platforms[i]);
             }
+
+            nextPlatformY = camera.Position.Y - YPlatformBuffer;
 
             //Initialise all our game objects
             for (int i = 0; i < gameObjects.Count; i++)
@@ -189,6 +208,16 @@ namespace General
         {
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
+
+            countdownTextures[0] = Content.Load<Texture2D>("textClimb.png");
+            countdownTextures[1] = Content.Load<Texture2D>("number1.png");
+            countdownTextures[2] = Content.Load<Texture2D>("number2.png");
+            countdownTextures[3] = Content.Load<Texture2D>("number3.png");
+            countdownTextures[4] = Content.Load<Texture2D>("number4.png");
+            countdownTextures[5] = Content.Load<Texture2D>("number5.png");
+            winTexture = Content.Load<Texture2D>("textYouWin.png");
+            lossTexture = Content.Load<Texture2D>("textYouLose.png");
+
             ai.LoadContent(Content);
             for (int i = 0; i < gameObjects.Count; i++)
             {
@@ -232,11 +261,12 @@ namespace General
                         List<RigidBody2D> objectsToRemove = new List<RigidBody2D>();
                         for (int i = 0; i < physics.RigidBodies.Count; i++)
                         {
-                            if (!camera.IsInViewport(physics.RigidBodies[i]) && physics.RigidBodies[i].Tag == "Ground")
+                            if (!camera.IsInViewport(physics.RigidBodies[i]) && physics.RigidBodies[i].Position.Y > (camera.Position + camera.Viewport).Y)
                             {
-                                respawnPlatforms = true;
                                 if (physics.RigidBodies[i].Tag == "Ground")
                                 {
+                                    respawnPlatforms = true;
+
                                     Platform plat = (Platform)physics.RigidBodies[i];
                                     //If dynamic allow Platform Gen to make a new one
                                     if (plat.PlatformType != Platform.PlatformTypes.Static)
@@ -248,9 +278,20 @@ namespace General
                                     {
                                         ai.WaypointNetwork.Remove(plat.ConnectedWaypoints[j]);
                                     }
+                                    gameObjects.Remove((GameObject)physics.RigidBodies[i]);
+                                    objectsToRemove.Add(physics.RigidBodies[i]);
                                 }
-                                gameObjects.Remove((GameObject)physics.RigidBodies[i]);
-                                objectsToRemove.Add(physics.RigidBodies[i]);
+                                else if (physics.RigidBodies[i].Tag == "Player")
+                                {
+                                    currentGameState = GameState.GameOver;
+                                    didPlayerWin = false;
+                                }
+                                else if (physics.RigidBodies[i].Tag == "Enemy")
+                                {
+                                    currentGameState = GameState.GameOver;
+                                    didPlayerWin = true;
+                                }
+
                             }
                         }
 
@@ -263,7 +304,8 @@ namespace General
                         //If we destroyed some, repopulate some more at the top of the screen
                         if (respawnPlatforms)
                         {
-                            Platform[] platformRow = platformGenerator.GeneratePlatforms(new Vector2(camera.Position.X, camera.Position.Y - YPlatformBuffer), camera.Viewport.X);
+                            Platform[] platformRow = platformGenerator.GeneratePlatforms(new Vector2(camera.Position.X, nextPlatformY), camera.Viewport.X);
+                            nextPlatformY -= PlatformDistance;
                             for (int i = 0; i < platformRow.Length; i++)
                             {
                                 platformRow[i].Initialize();
@@ -276,16 +318,32 @@ namespace General
                             ai.WaypointNetwork.AddRange(genPlatforms);
                         }
                     }
+
+                    //Game Logic
+                    ControllerHandler();
+
+                    for (int i = 0; i < gameObjects.Count; i++)
+                    {
+                        gameObjects[i].Update(gameTime);
+                    }
+
                 }
-
-                //Game Logic
-                ControllerHandler();
-
-                for (int i = 0; i < gameObjects.Count; i++)
+                else if (currentGameState == GameState.Countdown)
                 {
-                    gameObjects[i].Update(gameTime);
+                    if ((countdownTimer += (float)gameTime.ElapsedGameTime.TotalSeconds) > 1)
+                    {
+                        countdownTimer = 0;
+                        if (--countdownVal < 0)
+                        {
+                            currentGameState = GameState.Play;
+                        }
+                    }
                 }
-
+                else if (currentGameState == GameState.GameOver)
+                {
+                    //TODO
+                    //Play again button
+                }
                 //Call Physics
                 physics.Step();
 
@@ -339,11 +397,50 @@ namespace General
                               null,
                               null,
                               camera.GetTranslationMatrix());
+
             ai.DebugDraw(gameTime, spriteBatch, GraphicsDevice);
             for (int i = 0; i < gameObjects.Count; i++)
             {
                 gameObjects[i].Draw(gameTime, spriteBatch, GraphicsDevice);
             }
+
+            //Draw UI
+            if (currentGameState == GameState.Countdown)
+            {
+                Vector2 midPoint = camera.GetViewportMid();
+                float scale = MathHelper.Lerp(1.25f, 0.9f, countdownTimer);
+                //Display the current number
+                spriteBatch.Draw(countdownTextures[countdownVal],
+                                 midPoint,
+                                 null,
+                                 Color.White,
+                                 0.0f,
+                                 countdownTextures[countdownVal].Bounds.Center.ToVector2(),
+                                 scale,
+                                 SpriteEffects.None,
+                                 0.0f);
+            }
+            else if (currentGameState == GameState.GameOver)
+            {
+                string text = didPlayerWin ? "YOU WIN!" : "YOU LOSE!";
+                Vector2 position = camera.GetViewportMid();
+                float scale = 1.0f;
+                //Y sin wave change
+                float yChange = (float)Math.Sin(gameTime.TotalGameTime.TotalSeconds * shakeSpeed) * shakeScale;
+                position += new Vector2(0, yChange);
+
+                //Display Game Over Message
+                spriteBatch.Draw(didPlayerWin ? winTexture : lossTexture,
+                                 position,
+                                 null,
+                                 Color.White,
+                                 0.0f,
+                                 didPlayerWin ? winTexture.Bounds.Center.ToVector2() : lossTexture.Bounds.Center.ToVector2(),
+                                 scale,
+                                 SpriteEffects.None,
+                                 0.0f);
+            }
+
             spriteBatch.End();
 
             base.Draw(gameTime);

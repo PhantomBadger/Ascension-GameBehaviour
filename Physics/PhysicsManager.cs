@@ -175,5 +175,38 @@ namespace Physics
             colPair.ObjectB.ActiveDynamic += (-(colPair.ObjectA.Friction.DynamicCoefficient) * (colPair.ObjectB.Velocity));
             colPair.ObjectB.ActiveStatic += (-(colPair.ObjectA.Friction.StaticCoefficient) * (new Vector2(colPair.ContactNormal.Y, -colPair.ContactNormal.X)));
         }
+
+        /// <summary>
+        /// Find the point of intersection between two lines
+        /// </summary>
+        /// <param name="l1Start">Start of Line 1</param>
+        /// <param name="l1End">End of Line 1</param>
+        /// <param name="l2Start">Start of Line 2</param>
+        /// <param name="l2End">End of Line 2</param>
+        /// <returns>Vector2 of Intersection or null if there isnt one</returns>
+        public static Vector2? FindLineIntersection(Vector2 l1Start, Vector2 l1End, Vector2 l2Start, Vector2 l2End)
+        {
+            //Get times along the line at which point they intersect
+            float t0 = (l2End.X - l2Start.X) * (l1Start.Y - l2Start.Y) - (l2End.Y - l2Start.Y) * (l1Start.X - l2Start.X);
+            float t1 = (l1End.X - l1Start.X) * (l1Start.Y - l2Start.Y) - (l1End.Y - l1Start.Y) * (l1Start.X - l2Start.X);
+
+            //Get denominator
+            float d = (l2End.Y - l2Start.Y) * (l1End.X - l1Start.X) - (l2End.X - l2Start.X) * (l1End.Y - l1Start.Y);
+
+            t0 /= d;
+            t1 /= d;
+
+            //If it's somewhere on the line (0 being start of the line and 1 being at the end)
+            if (t0 >= 0 && t0 <= 1 && t1 >= 0 && t1 <= 1)
+            {
+                //Then there's an intersection
+                Vector2 intersection = new Vector2(l1Start.X + t0 * (l1End.X - l1Start.X),
+                                                   l1Start.Y + t0 * (l1End.Y - l1Start.Y));
+                return intersection;
+            }
+
+            //No Intersection
+            return null;
+        }
     }
 }

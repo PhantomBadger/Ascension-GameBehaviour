@@ -24,9 +24,11 @@ namespace AI
         public WaypointNode PreviousNode { get; set; }
         public WaypointNode NextNode { get; set; }
         public bool OnGround { get; set; } = false;
+        public Camera CameraRef { get; set; }
 
         private Texture2D enemyTexture;
         private Texture2D waypointTex;
+        private Texture2D offscreenTex;
         private SpriteFont debugFont;
         private Queue<WaypointNode> currentPath;
         private Platform currentPlatform;
@@ -36,6 +38,7 @@ namespace AI
         private const float MinDistance = 0.05f;
         private const float MinNodeJumpX = 40f;
         private const float MaxNodeJumpX = 70f;
+        private const float OffscreenIndicatorOffset = 10;
 
         /// <summary>
         /// Constructor for the Enemy Class with full info
@@ -63,6 +66,7 @@ namespace AI
         {
             debugFont = content.Load<SpriteFont>("DebugFont");
             enemyTexture = content.Load<Texture2D>("alienPink_front.png");
+            offscreenTex = content.Load<Texture2D>("offscreenIndicator_enemy.png");
             base.LoadContent(content);
         }
 
@@ -297,7 +301,8 @@ namespace AI
                             //Move with the platform until we're at the jump
                             Vector2 platformVel = currentPlatform.Velocity;
                             //Navigate to the jumpPos
-                            if (Math.Abs(jumpPosDeltaX) > MinNodeJumpX && Math.Abs(jumpPosDeltaX) < MaxNodeJumpX && !hasJumped)
+                            if ((jumpPosDeltaX > MinNodeJumpX && jumpPosDeltaX < MaxNodeJumpX && nodeDeltaXY.X > 0) ||
+                                (jumpPosDeltaX < MinNodeJumpX && jumpPosDeltaX > MaxNodeJumpX && nodeDeltaXY.X < 0) && !hasJumped)
                             {
                                 //Needs to jump
                                 Jump();
@@ -469,8 +474,38 @@ namespace AI
                 waypointTex.SetData(new Color[] { Color.White });
             }
 
-            spriteBatch.Draw(enemyTexture, Position, null, Color.White, Rotation.Z, Vector2.Zero, Scale, SpriteEffects.None, 0.0f);
+            if (CameraRef.IsInViewport(this))
+            { 
+                spriteBatch.Draw(enemyTexture, Position, null, Color.White, Rotation.Z, Vector2.Zero, Scale, SpriteEffects.None, 0.0f);
+            }
+            else
+            {
+                //Draw an arrow pointing to our location
+                Vector2 midpoint = CameraRef.GetViewportMid();
+                Vector2 direction = midpoint - Position;
 
+                Vector2? offscreenAnchor = null;
+                if (//Top of Viewport
+                    (offscreenAnchor = PhysicsManager.FindLineIntersection(midpoint, Position, CameraRef.Position, CameraRef.Position + new Vector2(CameraRef.Viewport.X, 0))).HasValue ||
+                    //Bottom of Viewport
+                    (offscreenAnchor = PhysicsManager.FindLineIntersection(midpoint, Position, CameraRef.Position + new Vector2(0, CameraRef.Viewport.Y), CameraRef.Position + CameraRef.Viewport)).HasValue ||
+                    //Right of Viewport
+                    (offscreenAnchor = PhysicsManager.FindLineIntersection(midpoint, Position, CameraRef.Position + new Vector2(CameraRef.Viewport.X, 0), CameraRef.Position + CameraRef.Viewport)).HasValue ||
+                    //Left of Viewport
+                    (offscreenAnchor = PhysicsManager.FindLineIntersection(midpoint, Position, CameraRef.Position, CameraRef.Position + new Vector2(0, CameraRef.Viewport.Y))).HasValue)
+                    {
+                        //Draw a line at the direction angle 
+                        Vector2 offscreenAngle = offscreenAnchor.Value - Position;
+                        float offscreenRot = (float)Math.Atan2(offscreenAngle.Y, offscreenAngle.X);
+
+                        offscreenAngle.Normalize();
+
+                        //Draw indicator
+                        spriteBatch.Draw(offscreenTex, offscreenAnchor.Value + (offscreenAngle* OffscreenIndicatorOffset), null, Color.White, offscreenRot, new Vector2(0, offscreenTex.Height / 2), new Vector2(1), Math.Abs(offscreenRot) > (Math.PI / 2) ? SpriteEffects.FlipVertically : SpriteEffects.None, 0.006f);
+                    }
+            }
+
+            //Debug Draw
             if (GameManager.DebugMode && currentPath != null && currentPath.Count > 0)
             {
                 spriteBatch.DrawString(debugFont, CurrentMovingState.ToString(), new Vector2(Position.X, Position.Y - 25), Color.Red);

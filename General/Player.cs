@@ -17,9 +17,13 @@ namespace General
     {
         public float PlayerSpeed { get; set; }
         public float JumpSpeed { get; set; }
+        public Camera CameraRef { get; set; }
 
         private Texture2D playerTexture;
+        private Texture2D offscreenTex;
         private bool onGround = false;
+
+        private const float OffscreenIndicatorOffset = 10;
 
         /// <summary>
         /// Constructor for Player Class with full info
@@ -42,6 +46,7 @@ namespace General
         public override void LoadContent(ContentManager content)
         {
             playerTexture = content.Load<Texture2D>("alienGreen_front.png");
+            offscreenTex = content.Load<Texture2D>("offscreenIndicator_player.png");
             base.LoadContent(content);
         }
 
@@ -87,7 +92,36 @@ namespace General
         /// <param name="spriteBatch">Sprite Batch</param>
         public override void Draw(GameTime gameTime, SpriteBatch spriteBatch, GraphicsDevice graphicsDevice)
         {
-            spriteBatch.Draw(playerTexture, Position, null, Color.White, Rotation.Z, Vector2.Zero, Scale, SpriteEffects.None, 0.0f);
+            if (CameraRef.IsInViewport(this))
+            {
+                spriteBatch.Draw(playerTexture, Position, null, Color.White, Rotation.Z, Vector2.Zero, Scale, SpriteEffects.None, 0.0f);
+            }
+            else
+            {
+                //Draw an arrow pointing to our location
+                Vector2 midpoint = CameraRef.GetViewportMid();
+                Vector2 direction = midpoint - Position;
+
+                Vector2? offscreenAnchor = null;
+                if (//Top of Viewport
+                    (offscreenAnchor = PhysicsManager.FindLineIntersection(midpoint, Position, CameraRef.Position, CameraRef.Position + new Vector2(CameraRef.Viewport.X, 0))).HasValue ||
+                    //Bottom of Viewport
+                    (offscreenAnchor = PhysicsManager.FindLineIntersection(midpoint, Position, CameraRef.Position + new Vector2(0, CameraRef.Viewport.Y), CameraRef.Position + CameraRef.Viewport)).HasValue ||
+                    //Right of Viewport
+                    (offscreenAnchor = PhysicsManager.FindLineIntersection(midpoint, Position, CameraRef.Position + new Vector2(CameraRef.Viewport.X, 0), CameraRef.Position + CameraRef.Viewport)).HasValue ||
+                    //Left of Viewport
+                    (offscreenAnchor = PhysicsManager.FindLineIntersection(midpoint, Position, CameraRef.Position, CameraRef.Position + new Vector2(0, CameraRef.Viewport.Y))).HasValue)
+                {
+                    //Draw a line at the direction angle 
+                    Vector2 offscreenAngle = offscreenAnchor.Value - Position;
+                    float offscreenRot = (float)Math.Atan2(offscreenAngle.Y, offscreenAngle.X);
+
+                    offscreenAngle.Normalize();
+
+                    //Draw indicator
+                    spriteBatch.Draw(offscreenTex, offscreenAnchor.Value + (offscreenAngle * OffscreenIndicatorOffset), null, Color.White, offscreenRot, new Vector2(0, offscreenTex.Height / 2), new Vector2(1), Math.Abs(offscreenRot) > (Math.PI / 2) ? SpriteEffects.FlipVertically : SpriteEffects.None, 0.005f);
+                }
+            }
             base.Draw(gameTime, spriteBatch, graphicsDevice);
         }
 

@@ -56,17 +56,11 @@ namespace AI
             float h = distance;
 
             //We want high frictions for more mobility
-            h -= (ConnectedPlatform.Friction.DynamicCoefficient * 250);
+            h -= (ConnectedPlatform.Friction.DynamicCoefficient * 2.5f);
           
             //For now we ignore bounciness to simplify AI
             //And low bounciness for more stability
-            h += (ConnectedPlatform.Bounciness * 100);
-
-            //Heavy penalty for moving platforms as they mess with the path navigation
-            if (ConnectedPlatform.PlatformType == Platform.PlatformTypes.DynamicMoving)
-            {
-                //h = MaxGValue;
-            }
+            h += (ConnectedPlatform.Bounciness);
 
             H = IsActive ? h : MaxGValue;
         }
