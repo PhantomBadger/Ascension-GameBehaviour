@@ -73,6 +73,9 @@
     <Content Include="Content\blue_shroom.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="Content\controls.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Content\dirtHalf_left.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

@@ -36,6 +36,7 @@ namespace General
         Texture2D[] countdownTextures = new Texture2D[6];
         Texture2D winTexture;
         Texture2D lossTexture;
+        Texture2D controlsTexture;
         bool didPlayerWin = false;
 
         KeyboardState oldState;
@@ -218,6 +219,7 @@ namespace General
             countdownTextures[5] = Content.Load<Texture2D>("number5.png");
             winTexture = Content.Load<Texture2D>("textYouWin.png");
             lossTexture = Content.Load<Texture2D>("textYouLose.png");
+            controlsTexture = Content.Load<Texture2D>("controls.png");
 
             ai.LoadContent(Content);
             for (int i = 0; i < gameObjects.Count; i++)
@@ -397,6 +399,17 @@ namespace General
                                  scale,
                                  SpriteEffects.None,
                                  0.0f);
+
+                //Display Controls
+                spriteBatch.Draw(controlsTexture,
+                                 midPoint + new Vector2(0, 125),
+                                 null,
+                                 Color.White,
+                                 0.0f,
+                                 controlsTexture.Bounds.Center.ToVector2(),
+                                 0.5f,
+                                 SpriteEffects.None,
+                                 0.0f);
             }
             else if (currentGameState == GameState.GameOver)
             {
@@ -417,6 +430,7 @@ namespace General
                                  scale,
                                  SpriteEffects.None,
                                  0.0f);
+
             }
 
             spriteBatch.End();
