@@ -19,8 +19,8 @@ namespace General
         private float increaseCounter = 0.0f;
 
         private const float MaxMoveRate = 2.5f;
-        private const float RateStep = 0.2f;
-        private const float IncreaseRate = 7.5f;
+        private const float RateStep = 0.1f;
+        private const float IncreaseRate = 5.0f;
 
         /// <summary>
         /// Get the middle of the screen
@@ -48,28 +48,21 @@ namespace General
         /// <param name="gameTime">Current Game Time</param>
         public void Update(GameTime gameTime)
         {
-            if (!GameManager.DebugMode)
+            if (moveRate < MaxMoveRate && 
+                (increaseCounter += (float)gameTime.ElapsedGameTime.TotalSeconds) > IncreaseRate)
             {
-                if (moveRate < MaxMoveRate && 
-                    (increaseCounter += (float)gameTime.ElapsedGameTime.TotalSeconds) > IncreaseRate)
-                {
-                    increaseCounter = 0;
-                    moveRate += RateStep;
-                }
+                increaseCounter = 0;
+                moveRate += RateStep;
+            }
 
-                //Auto Scroll Up
-                Position -= new Vector2(0, moveRate);
-            }
-            else
-            {
-                //If in debug, allow manual control
-                ControlHandler();
-            }
+            //Auto Scroll Up
+            Position -= new Vector2(0, moveRate);
         }
 
         /// <summary>
-        /// Handles the User Input for the Camera when in Debug Mode
+        /// Handles the User Input for the Camera
         /// </summary>
+        [Obsolete("No longer in use during debug mode")]
         private void ControlHandler()
         {
             if (Keyboard.GetState().IsKeyDown(Keys.Right))

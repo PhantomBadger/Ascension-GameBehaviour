@@ -37,7 +37,7 @@ namespace AI
 
         private const float MinDistance = 0.05f;
         private const float MinNodeJumpX = 40f;
-        private const float MaxNodeJumpX = 70f;
+        private const float MaxNodeJumpX = 80f;
         private const float OffscreenIndicatorOffset = 10;
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace AI
             gameUpdateStep = newUpdate;
             currentPath = new Queue<WaypointNode>();
         }
-        
+
         /// <summary>
         /// Load the Content Required for the Enemy, such as Sprites and Sounds
         /// </summary>
@@ -189,9 +189,6 @@ namespace AI
             Vector2 deltaXY = targetNode.Position - (new Vector2(Position.X + (BoxCollider.X / 2), Position.Y));
             Vector2 nodeDeltaXY = targetNode.Position - PreviousNode.Position;
 
-
-            //Console.WriteLine($"Node Delta: {nodeDeltaXY} | Enemy Delta: {deltaXY}");
-
             switch (CurrentMovingState)
             {
                 case TravellingToNodeState.SamePlatform:
@@ -222,8 +219,6 @@ namespace AI
                         double oppAcc = CalculateAcceleration(new Vector2(-Force.X, Force.Y)).X;
                         double timeToSlowdown = -Velocity.X / (oppAcc * leniency);
                         double distanceRequired = Math.Abs(Velocity.X * timeToSlowdown);
-
-                        //Console.WriteLine($"slowdownDist {distanceRequired}, curDist {deltaXY.X}");
 
                         //If we're within that distance
                         if (Math.Abs(deltaXY.X) < distanceRequired)
@@ -292,8 +287,8 @@ namespace AI
                         //Calculate the wanted jump location
                         float jumpXPos = targetNode.Position.X +
                             ((Math.Abs(targetNode.Position.X - targetNode.ConnectedPlatform.Position.X) < Math.Abs(targetNode.Position.X - (targetNode.ConnectedPlatform.Position.X + targetNode.ConnectedPlatform.BoxCollider.X))) ? -MinNodeJumpX : MinNodeJumpX);
-                        float jumpPosDeltaX = jumpXPos - Position.X;
-                        float prevNodeDeltaX = PreviousNode.Position.X - Position.X;
+                        float jumpPosDeltaX = jumpXPos - (Position.X + (BoxCollider.X / 2));
+                        float prevNodeDeltaX = PreviousNode.Position.X - (Position.X + (BoxCollider.X / 2));
 
                         //Are we on a moving platform?
                         if (currentPlatform.PlatformType == Platform.PlatformTypes.DynamicMoving)
@@ -301,29 +296,33 @@ namespace AI
                             //Move with the platform until we're at the jump
                             Vector2 platformVel = currentPlatform.Velocity;
                             //Navigate to the jumpPos
-                            if ((jumpPosDeltaX > MinNodeJumpX && jumpPosDeltaX < MaxNodeJumpX && nodeDeltaXY.X > 0) ||
-                                (jumpPosDeltaX < MinNodeJumpX && jumpPosDeltaX > MaxNodeJumpX && nodeDeltaXY.X < 0) && !hasJumped)
+                            if (((nodeDeltaXY.X > MinNodeJumpX && nodeDeltaXY.X < MaxNodeJumpX && currentPlatform.Velocity.X < 0) ||
+                                (nodeDeltaXY.X < MinNodeJumpX && nodeDeltaXY.X > MaxNodeJumpX && currentPlatform.Velocity.X > 0)) && !hasJumped)
                             {
                                 //Needs to jump
+                                Console.WriteLine($"Jump Delta: {jumpPosDeltaX} Node Delta: {nodeDeltaXY}");
                                 Jump();
                             }
                             else if (!hasJumped)
                             {
                                 //Hasnt jumped
+                                Console.WriteLine($"Move with platform Delta: {prevNodeDeltaX} Node Delta: {nodeDeltaXY}");
                                 MoveHorizontal(prevNodeDeltaX);
                             }
                             else
                             {
                                 //Has jumped
+                                Console.WriteLine($"In Air Delta: {deltaXY}");
+                                Console.WriteLine(deltaXY);
                                 MoveHorizontal(deltaXY.X);
                             }
-
                         }
                         //Are we jumping to a moving platform?
                         else if (targetNode.ConnectedPlatform.PlatformType == Platform.PlatformTypes.DynamicMoving)
                         {
                             //Wait until the platform is in range
-                            if (Math.Abs(deltaXY.X) < MaxNodeJumpX && !hasJumped)
+                            if (((nodeDeltaXY.X > MinNodeJumpX && nodeDeltaXY.X < MaxNodeJumpX && targetNode.ConnectedPlatform.Velocity.X < 0) ||
+                                (nodeDeltaXY.X < MinNodeJumpX && nodeDeltaXY.X > MaxNodeJumpX && targetNode.ConnectedPlatform.Velocity.X > 0)) && !hasJumped)
                             {
                                 Jump();
                             }
@@ -340,7 +339,8 @@ namespace AI
                         else
                         {
                             //Navigate to the jumpPos
-                            if (jumpPosDeltaX < (Math.Sign(jumpPosDeltaX) * MinNodeJumpX) && !hasJumped)
+                            if (((jumpPosDeltaX > MinDistance && jumpPosDeltaX > 0) ||
+                                (jumpPosDeltaX < -MinDistance && jumpPosDeltaX < 0)) && !hasJumped)
                             {
                                 //Needs to jump
                                 Jump();
@@ -459,7 +459,7 @@ namespace AI
 
             return tempNode;
         }
-        
+
         /// <summary>
         /// Draw whats needed this frame
         /// </summary>
@@ -475,7 +475,7 @@ namespace AI
             }
 
             if (CameraRef.IsInViewport(this))
-            { 
+            {
                 spriteBatch.Draw(enemyTexture, Position, null, Color.White, Rotation.Z, Vector2.Zero, Scale, SpriteEffects.None, 0.0f);
             }
             else
@@ -493,16 +493,16 @@ namespace AI
                     (offscreenAnchor = PhysicsManager.FindLineIntersection(midpoint, Position, CameraRef.Position + new Vector2(CameraRef.Viewport.X, 0), CameraRef.Position + CameraRef.Viewport)).HasValue ||
                     //Left of Viewport
                     (offscreenAnchor = PhysicsManager.FindLineIntersection(midpoint, Position, CameraRef.Position, CameraRef.Position + new Vector2(0, CameraRef.Viewport.Y))).HasValue)
-                    {
-                        //Draw a line at the direction angle 
-                        Vector2 offscreenAngle = offscreenAnchor.Value - Position;
-                        float offscreenRot = (float)Math.Atan2(offscreenAngle.Y, offscreenAngle.X);
+                {
+                    //Draw a line at the direction angle 
+                    Vector2 offscreenAngle = offscreenAnchor.Value - Position;
+                    float offscreenRot = (float)Math.Atan2(offscreenAngle.Y, offscreenAngle.X);
 
-                        offscreenAngle.Normalize();
+                    offscreenAngle.Normalize();
 
-                        //Draw indicator
-                        spriteBatch.Draw(offscreenTex, offscreenAnchor.Value + (offscreenAngle* OffscreenIndicatorOffset), null, Color.White, offscreenRot, new Vector2(0, offscreenTex.Height / 2), new Vector2(1), Math.Abs(offscreenRot) > (Math.PI / 2) ? SpriteEffects.FlipVertically : SpriteEffects.None, 0.006f);
-                    }
+                    //Draw indicator
+                    spriteBatch.Draw(offscreenTex, offscreenAnchor.Value + (offscreenAngle * OffscreenIndicatorOffset), null, Color.White, offscreenRot, new Vector2(0, offscreenTex.Height / 2), new Vector2(1), Math.Abs(offscreenRot) > (Math.PI / 2) ? SpriteEffects.FlipVertically : SpriteEffects.None, 0.006f);
+                }
             }
 
             //Debug Draw
@@ -565,6 +565,6 @@ namespace AI
             NextNode = currentPath.Peek();
             CurrentState = EnemyState.AtGoal;
         }
-        
+
     }
 }

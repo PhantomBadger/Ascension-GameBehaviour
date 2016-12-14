@@ -18,10 +18,14 @@ namespace AI
         public Enemy EnemyReference { get; set; }
         public AIManager AIReference { get; set; }
 
+        private Platform.PlatformTypes prevDynamicType = Platform.PlatformTypes.Static;
+
         private const int MaxPlatformNumbers = 5;
         private const int MinPlatformNumbers = 1;
         private const int MaxPlatformSpacePercentOfScreen = 30;
         private const int GenerationPosYOffset = 0;
+        private const int MaxConnectionLength = 170;
+        private const int DynamicPlatformChance = 5;
 
         //Object Templates that are re-used when generating
         //Friction and Bounciness
@@ -35,12 +39,11 @@ namespace AI
             public Platform.PlatformTypes PlatformType { get; set; }
         }
 
-        public bool ContainsDynamic { get; set; }
-
         private PlatformComponents[] platformPrefabs;
         private PlatformComponents[] specialPlatformPrefabs;
         private Random rand;
         private int prevNumOfPlatforms = -1;
+        private bool prevContainsDynamic = false;
 
         /// <summary>
         /// Populate the platform templates
@@ -137,16 +140,17 @@ namespace AI
 
             //Pick a number of platforms, as long as it wasnt one we just had
             int numOfPlatforms;
-            while ((numOfPlatforms = rand.Next(MinPlatformNumbers, MaxPlatformNumbers)) == prevNumOfPlatforms) { }
+            while ((numOfPlatforms = rand.Next(MinPlatformNumbers, MaxPlatformNumbers)) == prevNumOfPlatforms || prevNumOfPlatforms == 3 && numOfPlatforms == 2) { }
             prevNumOfPlatforms = numOfPlatforms;
             platforms = new List<Platform>();
 
             //Console.WriteLine(numOfPlatforms);
 
             //Will this row have a dynamic platform in?
-            bool hasDynamicPlatform = rand.Next(1, 11) < 4;
+            bool hasDynamicPlatform = rand.Next(1, 11) < DynamicPlatformChance;
 
-            int dynamicPlatformType = rand.Next(0, specialPlatformPrefabs.Length);
+            int dynamicPlatformType;
+            while (specialPlatformPrefabs[dynamicPlatformType = rand.Next(0, specialPlatformPrefabs.Length)].PlatformType == prevDynamicType);
 
             //Decide which platform index it will replace, in the case of a moving platform, it replaces 2
             int dynamicPlatformIndex = specialPlatformPrefabs[dynamicPlatformType].PlatformType == Platform.PlatformTypes.DynamicMoving ?
@@ -195,10 +199,11 @@ namespace AI
             }
 
             //Replace the platform at the given index with our dynamic one
-            if (hasDynamicPlatform)
+            if (hasDynamicPlatform && !prevContainsDynamic)
             {
                 //If so, decide ahead of time which dynamic platform we'll include
-                ContainsDynamic = true;
+                prevContainsDynamic = true;
+                prevDynamicType = specialPlatformPrefabs[dynamicPlatformType].PlatformType;
 
                 //Set Type Specific Values
                 switch (specialPlatformPrefabs[dynamicPlatformType].PlatformType)
@@ -333,6 +338,10 @@ namespace AI
                         }
                 }
             }
+            else if (prevContainsDynamic)
+            {
+                prevContainsDynamic = false;
+            }
 
             //Return these generated platforms
             return platforms.ToArray();
@@ -393,8 +402,11 @@ namespace AI
                         sortedList.Sort((n1, n2) => (rightNode.Position.X - n1.Position.X).CompareTo(rightNode.Position.X - n2.Position.X));
                         closestToRightNode = sortedList[0];
 
-                        rightNode.ConnectedNodes.Add(closestToRightNode);
-                        closestToRightNode.ConnectedNodes.Add(rightNode);
+                        if (Math.Abs((rightNode.Position - closestToRightNode.Position).Length()) < MaxConnectionLength)
+                        {
+                            rightNode.ConnectedNodes.Add(closestToRightNode);
+                            closestToRightNode.ConnectedNodes.Add(rightNode);
+                        }
                     }
 
                     //Find closest to left edge node
@@ -410,8 +422,11 @@ namespace AI
                         sortedList.Sort((n1, n2) => (n1.Position.X - leftNode.Position.X).CompareTo(n2.Position.X - leftNode.Position.X));
                         closestToLeftNode = sortedList[0];
 
-                        closestToLeftNode.ConnectedNodes.Add(leftNode);
-                        leftNode.ConnectedNodes.Add(closestToLeftNode);
+                        if (Math.Abs((leftNode.Position - closestToLeftNode.Position).Length()) < MaxConnectionLength)
+                        {
+                            closestToLeftNode.ConnectedNodes.Add(leftNode);
+                            leftNode.ConnectedNodes.Add(closestToLeftNode);
+                        }
                     }
                 }
 

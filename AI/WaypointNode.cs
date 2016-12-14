@@ -58,9 +58,14 @@ namespace AI
             //We want high frictions for more mobility
             h -= (ConnectedPlatform.Friction.DynamicCoefficient * 2.5f);
           
-            //For now we ignore bounciness to simplify AI
             //And low bounciness for more stability
             h += (ConnectedPlatform.Bounciness);
+
+            //Avoid Moving platforms if you can
+            if (ConnectedPlatform.PlatformType == Platform.PlatformTypes.DynamicMoving)
+            {
+                h += 500;
+            }
 
             H = IsActive ? h : MaxGValue;
         }

@@ -33,7 +33,6 @@ namespace General
         const int countdownStart = 5;
         int countdownVal;
         float countdownTimer = 0;
-        Vector2 camPosOnDebug;
         Texture2D[] countdownTextures = new Texture2D[6];
         Texture2D winTexture;
         Texture2D lossTexture;
@@ -48,9 +47,11 @@ namespace General
         const float shakeSpeed = 5.0f;
         const float shakeScale = 10.0f;
 
+        /// <summary>
+        /// Default Constructor
+        /// </summary>
         public GameManager()
         {
-            camPosOnDebug = new Vector2(0);
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             physics = new PhysicsManager();
@@ -254,69 +255,61 @@ namespace General
                     //Camera Logic - Move Upwards
                     camera.Update(gameTime);
 
-                    if (!DebugMode)
+                    //As platforms move off-screen, mark them for destructions
+                    bool respawnPlatforms = false;
+                    List<RigidBody2D> objectsToRemove = new List<RigidBody2D>();
+                    for (int i = 0; i < physics.RigidBodies.Count; i++)
                     {
-                        //As platforms move off-screen, mark them for destructions
-                        bool respawnPlatforms = false;
-                        List<RigidBody2D> objectsToRemove = new List<RigidBody2D>();
-                        for (int i = 0; i < physics.RigidBodies.Count; i++)
+                        if (!camera.IsInViewport(physics.RigidBodies[i]) && physics.RigidBodies[i].Position.Y > (camera.Position + camera.Viewport).Y)
                         {
-                            if (!camera.IsInViewport(physics.RigidBodies[i]) && physics.RigidBodies[i].Position.Y > (camera.Position + camera.Viewport).Y)
+                            if (physics.RigidBodies[i].Tag == "Ground")
                             {
-                                if (physics.RigidBodies[i].Tag == "Ground")
-                                {
-                                    respawnPlatforms = true;
+                                respawnPlatforms = true;
 
-                                    Platform plat = (Platform)physics.RigidBodies[i];
-                                    //If dynamic allow Platform Gen to make a new one
-                                    if (plat.PlatformType != Platform.PlatformTypes.Static)
-                                    {
-                                        platformGenerator.ContainsDynamic = false;
-                                    }
+                                Platform plat = (Platform)physics.RigidBodies[i];
 
-                                    for (int j = 0; j < plat.ConnectedWaypoints.Count; j++)
-                                    {
-                                        ai.WaypointNetwork.Remove(plat.ConnectedWaypoints[j]);
-                                    }
-                                    gameObjects.Remove((GameObject)physics.RigidBodies[i]);
-                                    objectsToRemove.Add(physics.RigidBodies[i]);
-                                }
-                                else if (physics.RigidBodies[i].Tag == "Player")
+                                for (int j = 0; j < plat.ConnectedWaypoints.Count; j++)
                                 {
-                                    currentGameState = GameState.GameOver;
-                                    didPlayerWin = false;
+                                    ai.WaypointNetwork.Remove(plat.ConnectedWaypoints[j]);
                                 }
-                                else if (physics.RigidBodies[i].Tag == "Enemy")
-                                {
-                                    currentGameState = GameState.GameOver;
-                                    didPlayerWin = true;
-                                }
-
+                                gameObjects.Remove((GameObject)physics.RigidBodies[i]);
+                                objectsToRemove.Add(physics.RigidBodies[i]);
                             }
-                        }
-
-                        //Remove the platforms
-                        for (int i = 0; i < objectsToRemove.Count; i++)
-                        {
-                            physics.RigidBodies.Remove(objectsToRemove[i]);
-                        }
-
-                        //If we destroyed some, repopulate some more at the top of the screen
-                        if (respawnPlatforms)
-                        {
-                            Platform[] platformRow = platformGenerator.GeneratePlatforms(new Vector2(camera.Position.X, nextPlatformY), camera.Viewport.X);
-                            nextPlatformY -= PlatformDistance;
-                            for (int i = 0; i < platformRow.Length; i++)
+                            else if (physics.RigidBodies[i].Tag == "Player")
                             {
-                                platformRow[i].Initialize();
-                                platformRow[i].LoadContent(Content);
-                                gameObjects.Add(platformRow[i]);
-                                physics.RigidBodies.Add(platformRow[i]);
+                                currentGameState = GameState.GameOver;
+                                didPlayerWin = false;
                             }
-                            WaypointNode[] genPlatforms = platformGenerator.GenerateWaypoints(platformRow, previousPlatformRow, player.BoxCollider.Y);
-                            previousPlatformRow = platformRow;
-                            ai.WaypointNetwork.AddRange(genPlatforms);
+                            else if (physics.RigidBodies[i].Tag == "Enemy")
+                            {
+                                currentGameState = GameState.GameOver;
+                                didPlayerWin = true;
+                            }
+
                         }
+                    }
+
+                    //Remove the platforms
+                    for (int i = 0; i < objectsToRemove.Count; i++)
+                    {
+                        physics.RigidBodies.Remove(objectsToRemove[i]);
+                    }
+
+                    //If we destroyed some, repopulate some more at the top of the screen
+                    if (respawnPlatforms)
+                    {
+                        Platform[] platformRow = platformGenerator.GeneratePlatforms(new Vector2(camera.Position.X, nextPlatformY), camera.Viewport.X);
+                        nextPlatformY -= PlatformDistance;
+                        for (int i = 0; i < platformRow.Length; i++)
+                        {
+                            platformRow[i].Initialize();
+                            platformRow[i].LoadContent(Content);
+                            gameObjects.Add(platformRow[i]);
+                            physics.RigidBodies.Add(platformRow[i]);
+                        }
+                        WaypointNode[] genPlatforms = platformGenerator.GenerateWaypoints(platformRow, previousPlatformRow, player.BoxCollider.Y);
+                        previousPlatformRow = platformRow;
+                        ai.WaypointNetwork.AddRange(genPlatforms);
                     }
 
                     //Game Logic
@@ -341,8 +334,7 @@ namespace General
                 }
                 else if (currentGameState == GameState.GameOver)
                 {
-                    //TODO
-                    //Play again button
+                    //Do nothing for now
                 }
                 //Call Physics
                 physics.Step();
@@ -361,21 +353,7 @@ namespace General
             //Enable Debug mode
             if (newState.IsKeyDown(Keys.P) && !oldState.IsKeyDown(Keys.P))
             {
-                if (DebugMode)
-                {
-                    DebugMode = false;
-                    camera.Position = camPosOnDebug;
-                }
-                else
-                {
-                    DebugMode = true;
-                    camPosOnDebug = camera.Position;
-                }
-            }
-
-            if (newState.IsKeyDown(Keys.U) && !oldState.IsKeyDown(Keys.U))
-            {
-                currentGameState = GameState.Play;
+                DebugMode = !DebugMode;
             }
 
             oldState = newState;
